@@ -175,7 +175,7 @@ bool IconOffsetEditorPopup::setup() {
 
         auto animDescLabel = CCLabelBMFont::create("Test Animations", "goldFont.fnt");
         animDescLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
-        animDescLabel->setScale(0.3f);
+        animDescLabel->setScale(0.4f);
         this->m_mainLayer->addChild(animDescLabel);
         
         if (m_currentIconType == IconType::Robot) {
