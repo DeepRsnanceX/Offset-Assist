@@ -15,7 +15,7 @@
 	"name": "Offset Assist",
 	"version": "v1.0.0",
 	"developer": "Saritahhh",
-	"description": "I don't wanna reopen the game a million times",
+	"description": "Manage Icon Offsets in-game!",
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
 		"hiimjustin000.more_icons": {

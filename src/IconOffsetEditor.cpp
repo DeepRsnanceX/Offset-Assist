@@ -55,7 +55,7 @@ void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
 
 IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
     auto ret = new IconOffsetEditorPopup();
-    if (ret->initAnchored(280.0f, 160.0f, "GJ_square01.png")) {
+    if (ret->initAnchored(280.0f, 175.0f, "GJ_square01.png")) {
         ret->autorelease();
         return ret;
     }
@@ -65,39 +65,278 @@ IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
 
 bool IconOffsetEditorPopup::setup() {
     this->setTitle("Icon Offset Editor");
-    
+
     auto manager = GameManager::sharedState();
     m_currentIconType = manager->m_playerIconType;
     IconInfo* icInfo = MoreIcons::getIcon(m_currentIconType);
+    auto size = this->m_mainLayer->getContentSize();
+    auto popupSize = this->getContentSize();
+    bool isRobotOrSpider = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider);
+
+    const float midX = size.width / 2.f;
+    const float midY = size.height / 2.f;
+    const float inputX = midX - 40.0f;
+    const float inputYTop = midY + 25.0f;
+    const float lowerMenuX = midX - 55.f;
+    const float lowerMenuBaseY = midY - 52.5f;
+
+    // -----------------------
+    // INFO BUTTON
+    // -----------------------
+    auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
+    infoSpr->setScale(0.8f);
+    auto infoBtn = CCMenuItemSpriteExtra::create(
+        infoSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onInfoButton)
+    );
+
+    auto infoBtnMenu = CCMenu::create();
+    infoBtnMenu->addChild(infoBtn);
+    infoBtnMenu->setPosition({size.width - 15.f, size.height - 15.f});
+    this->m_mainLayer->addChild(infoBtnMenu);
     
+    // -----------------------
+    // DISABLE FOR VANILLA ICONS (L bozo sorry it's easier to work with MI)
+    // -----------------------
     if (!icInfo) {
-        auto size = this->m_mainLayer->getContentSize();
-        auto warningLabel = CCLabelBMFont::create("Vanilla icons are not supported!\nPlease load your icons\nvia More Icons instead.", "bigFont.fnt");
+        auto warningLabel = CCLabelBMFont::create("Vanilla icons are not supported!\nPlease load your icons via\nMore Icons instead.", "bigFont.fnt");
         warningLabel->setPosition({size.width / 2.0f, size.height / 2.0f});
         warningLabel->setScale(0.4f);
         warningLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+        warningLabel->setColor({255, 0, 0});
         this->m_mainLayer->addChild(warningLabel);
         return true;
     }
 
     m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
     
-    auto size = this->m_mainLayer->getContentSize();
-    auto popupSize = this->getContentSize();
-    const float midX = size.width / 2.f;
-    const float midY = size.height / 2.f;
-    
+    // -----------------------
+    // SETUP SIMPLEPLAYER
+    // -----------------------
     m_previewPlayer = SimplePlayer::create(0);
     m_previewPlayer->setPosition({midX + 75.0f, midY});
     m_previewPlayer->setScale(2.f);
+    m_previewPlayer->setZOrder(2);
     updatePreviewPlayer();
     
-    if (m_previewPlayer->m_outlineSprite) m_previewPlayer->m_outlineSprite->setVisible(true);
-    
     this->m_mainLayer->addChild(m_previewPlayer);
-    
-    const float inputX = midX - 40.0f;
-    const float inputYTop = midY + 25.0f;
+
+    // -----------------------
+    // GLOW TOGGLING FUNCTIONS
+    // -----------------------
+    auto glowLabel = CCLabelBMFont::create("Toggle\nGlow", "bigFont.fnt");
+    glowLabel->setAlignment(kCCTextAlignmentCenter);
+    glowLabel->setScale(1.1f);
+    auto togglerSpr = CircleButtonSprite::create(glowLabel, CircleBaseColor::Pink, CircleBaseSize::SmallAlt);
+    togglerSpr->setScale(0.8f);
+    m_glowToggler = CCMenuItemSpriteExtra::create(
+        togglerSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onToggleGlow)
+    );
+
+    auto glowMenu = CCMenu::create();
+    glowMenu->addChild(m_glowToggler);
+    glowMenu->setPosition({midX + 75.0f, midY - 60.f});
+    this->m_mainLayer->addChild(glowMenu);
+
+    if (isRobotOrSpider) {
+        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
+            m_previewPlayer->m_robotSprite : nullptr;
+        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
+            m_previewPlayer->m_spiderSprite : nullptr;
+        
+        if (robotSprite && robotSprite->m_glowSprite) {
+            robotSprite->m_glowSprite->setVisible(true);
+        }
+        if (spiderSprite && spiderSprite->m_glowSprite) {
+            spiderSprite->m_glowSprite->setVisible(true);
+        }
+    } else {
+        if (m_previewPlayer->m_outlineSprite) m_previewPlayer->m_outlineSprite->setVisible(true);
+    }
+
+    // -----------------------
+    // ROBOT/SPIDER ANIMATIONS MENU
+    // -----------------------
+    if (isRobotOrSpider) {
+        m_animButtonsMenu = CCMenu::create();
+        m_animButtonsMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        m_animButtonsMenu->setScale(0.6f);
+        m_animButtonsMenu->setContentSize({200.f, 40.f});
+        m_animButtonsMenu->setLayout(
+            RowLayout::create()
+                ->setGap(4.f)
+                ->setAxisAlignment(AxisAlignment::Center)
+                ->setAxisReverse(false)
+        );
+        this->m_mainLayer->addChild(m_animButtonsMenu);
+
+        auto animDescLabel = CCLabelBMFont::create("Test Animations", "bigFont.fnt");
+        animDescLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
+        animDescLabel->setScale(0.375f);
+        this->m_mainLayer->addChild(animDescLabel);
+        
+        if (m_currentIconType == IconType::Robot) {
+            auto createAnimBtn = [this](const char* label, const char* animName) {
+                auto lbl = CCLabelBMFont::create(label, "bigFont.fnt");
+                lbl->setScale(0.4f);
+                auto btn = CCMenuItemSpriteExtra::create(
+                    CircleButtonSprite::create(lbl, CircleBaseColor::Gray, CircleBaseSize::Small),
+                    this,
+                    menu_selector(IconOffsetEditorPopup::onPlayAnimation)
+                );
+                btn->setUserObject(CCString::create(animName));
+                return btn;
+            };
+            
+            m_animButtonsMenu->addChild(createAnimBtn("idle", "idle"));
+            m_animButtonsMenu->addChild(createAnimBtn("idle01", "idle01"));
+            m_animButtonsMenu->addChild(createAnimBtn("run", "run"));
+            m_animButtonsMenu->addChild(createAnimBtn("run2", "run2"));
+            m_animButtonsMenu->addChild(createAnimBtn("run3", "run3"));
+        } else {
+            auto createAnimBtn = [this](const char* label, const char* animName) {
+                auto lbl = CCLabelBMFont::create(label, "bigFont.fnt");
+                lbl->setScale(0.4f);
+                auto btn = CCMenuItemSpriteExtra::create(
+                    CircleButtonSprite::create(lbl, CircleBaseColor::Gray, CircleBaseSize::Small),
+                    this,
+                    menu_selector(IconOffsetEditorPopup::onPlayAnimation)
+                );
+                btn->setUserObject(CCString::create(animName));
+                return btn;
+            };
+            
+            m_animButtonsMenu->addChild(createAnimBtn("idle", "idle"));
+            m_animButtonsMenu->addChild(createAnimBtn("idle01", "idle01"));
+            m_animButtonsMenu->addChild(createAnimBtn("walk", "walk"));
+            m_animButtonsMenu->addChild(createAnimBtn("run", "run"));
+            m_animButtonsMenu->addChild(createAnimBtn("run2", "run2"));
+        }
+        
+        m_animButtonsMenu->updateLayout();
+    }
+
+    // -----------------------
+    // BALL ROTATION PREVIEW CONTROLS
+    // -----------------------
+    if (m_currentIconType == IconType::Ball) {
+        m_animButtonsMenu = CCMenu::create();
+        m_animButtonsMenu->setPosition({lowerMenuX, lowerMenuBaseY - 18.f});
+        m_animButtonsMenu->setContentSize({55.f, 40.f});
+        m_animButtonsMenu->setLayout(
+            RowLayout::create()
+                ->setGap(6.f)
+                ->setAxisAlignment(AxisAlignment::Center)
+        );
+        m_animButtonsMenu->setScale(0.7f);
+        this->m_mainLayer->addChild(m_animButtonsMenu);
+        
+        auto playLbl = CCLabelBMFont::create("Spin", "bigFont.fnt");
+        playLbl->setScale(0.35f);
+        auto playBtn = CCMenuItemSpriteExtra::create(
+            CircleButtonSprite::create(playLbl, CircleBaseColor::Green, CircleBaseSize::Small),
+            this,
+            menu_selector(IconOffsetEditorPopup::onPlayBallRotation)
+        );
+        
+        auto stopLbl = CCLabelBMFont::create("Stop", "bigFont.fnt");
+        stopLbl->setScale(0.35f);
+        auto stopBtn = CCMenuItemSpriteExtra::create(
+            CircleButtonSprite::create(stopLbl, CircleBaseColor::Gray, CircleBaseSize::Small),
+            this,
+            menu_selector(IconOffsetEditorPopup::onStopBallRotation)
+        );
+        
+        m_animButtonsMenu->addChild(playBtn);
+        m_animButtonsMenu->addChild(stopBtn);
+        m_animButtonsMenu->updateLayout();
+        
+        // rotation speed slider
+        auto speedLabel = CCLabelBMFont::create("Speed:", "bigFont.fnt");
+        speedLabel->setPosition({lowerMenuX - 45.f, lowerMenuBaseY + 15.f});
+        speedLabel->setScale(0.3f);
+        this->m_mainLayer->addChild(speedLabel);
+        
+        m_rotationSpeedSlider = Slider::create(
+            this, 
+            menu_selector(IconOffsetEditorPopup::onRotationSpeedChanged), 
+            0.6f
+        );
+        m_rotationSpeedSlider->setValue(0.5f);
+        m_rotationSpeedSlider->m_sliderBar->setContentSize({80.f, m_rotationSpeedSlider->m_sliderBar->getContentSize().height});
+        
+        auto sliderMenu = CCMenu::create();
+        sliderMenu->addChild(m_rotationSpeedSlider);
+        sliderMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        this->m_mainLayer->addChild(sliderMenu);
+        
+        m_rotationSpeedLabel = CCLabelBMFont::create("1.0", "bigFont.fnt");
+        m_rotationSpeedLabel->setPosition({lowerMenuX - 15.f, lowerMenuBaseY + 15.f});
+        m_rotationSpeedLabel->setScale(0.3f);
+        this->m_mainLayer->addChild(m_rotationSpeedLabel);
+    }
+
+    // -----------------------
+    // CUBE PREVIEW FOR RIDER GAMEMODES
+    // -----------------------
+    if (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack) {        
+        m_cubePreview = CCSprite::create("exampleCube.png"_spr);
+        
+        // welcome back icon preview
+        if (m_currentIconType == IconType::Ship) {
+            m_cubePreview->setPosition({
+                m_previewPlayer->getPositionX(),
+                m_previewPlayer->getPositionY() + 20.f
+            });
+            m_cubePreview->setScale(1.1f);
+        } else if (m_currentIconType == IconType::Ufo) {
+            m_cubePreview->setPosition({
+                m_previewPlayer->getPositionX(),
+                m_previewPlayer->getPositionY() + 12.f
+            });
+            m_cubePreview->setScale(1.1f);
+        } else if (m_currentIconType == IconType::Jetpack) {
+            m_cubePreview->setPosition({
+                m_previewPlayer->getPositionX() + 12.f,
+                m_previewPlayer->getPositionY() + 8.f
+            });
+            m_cubePreview->setScale(1.2f);
+        }
+        
+        this->m_mainLayer->addChild(m_cubePreview);
+        
+        // cube opacity slider
+        auto opacityLabel = CCLabelBMFont::create("Cube Opacity:", "bigFont.fnt");
+        opacityLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
+        opacityLabel->setScale(0.3f);
+        this->m_mainLayer->addChild(opacityLabel);
+        
+        m_cubeOpacitySlider = Slider::create(
+            this,
+            menu_selector(IconOffsetEditorPopup::onCubeOpacityChanged),
+            0.6f
+        );
+        m_cubeOpacitySlider->setValue(1.0f);
+        m_cubeOpacitySlider->m_sliderBar->setContentSize({60.f, m_cubeOpacitySlider->m_sliderBar->getContentSize().height});
+        
+        auto opacityMenu = CCMenu::create();
+        opacityMenu->addChild(m_cubeOpacitySlider);
+        opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        this->m_mainLayer->addChild(opacityMenu);
+        
+        m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
+        m_cubeOpacityLabel->setPosition({lowerMenuX, lowerMenuBaseY - 10.f});
+        m_cubeOpacityLabel->setScale(0.25f);
+        m_cubeOpacityLabel->setOpacity(150);
+        this->m_mainLayer->addChild(m_cubeOpacityLabel);
+    }
+
+    // -----------------------
+    // MAIN OFFSET INPUTS SETUP
+    // -----------------------
     
     // x offset
     m_labelX = CCLabelBMFont::create("Offset X:", "bigFont.fnt");
@@ -125,7 +364,8 @@ bool IconOffsetEditorPopup::setup() {
     m_inputY->setFilter("0123456789.-");
     this->m_mainLayer->addChild(m_inputY);
     
-    auto updateBtnSprite = ButtonSprite::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.8f);
+    auto updateBtnSprite = CCSprite::createWithSpriteFrameName("GJ_replayBtn_001.png");
+    updateBtnSprite->setScale(0.6f);
     m_updateButton = CCMenuItemSpriteExtra::create(
         updateBtnSprite,
         this,
@@ -135,13 +375,16 @@ bool IconOffsetEditorPopup::setup() {
     auto buttonMenu = CCMenu::create();
     buttonMenu->setPosition({0.f, 0.f});
     buttonMenu->addChild(m_updateButton);
-    m_updateButton->setPosition({midX, 0.f});
+    m_updateButton->setPosition({size.width, 0.f});
     
     this->m_mainLayer->addChild(buttonMenu);
 
-    bool isRobotOrSpider = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider);
     int partCount = 4;
     
+    // -----------------------
+    // BUNCH OF BULLSHIT IDK BRO LOL
+    // THIS (somehow) WORKS DON'T TOUCH IT
+    // -----------------------
     if (isRobotOrSpider) {
         if (!icInfo->frameNames.empty()) {
             m_frameNames = icInfo->frameNames;
@@ -361,6 +604,84 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
     
     updateInputFields();
     highlightSelectedButton();
+}
+
+void IconOffsetEditorPopup::onInfoButton(CCObject* sender) {
+    FLAlertLayer::create(
+        "Offset Assist",
+        "This is the Icon Offset Editor Menu!\nIn here, you can modify the sprite offsets of each individual Icon Sprite.\nOnce you've made some changes, click on the Refresh button on the lower right corner to refresh the Preview and check how those new offsets look!\nThere's also some buttons to preview Robot/Spider animations, Ball rolling, Cube pos, anything u may need!",
+        "OK"
+    )->show();
+}
+
+void IconOffsetEditorPopup::onToggleGlow(CCObject* sender) {
+
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
+            m_previewPlayer->m_robotSprite : nullptr;
+        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
+            m_previewPlayer->m_spiderSprite : nullptr;
+        
+        if (robotSprite && robotSprite->m_glowSprite) {
+            robotSprite->m_glowSprite->setVisible(!robotSprite->m_glowSprite->isVisible());
+        }
+        if (spiderSprite && spiderSprite->m_glowSprite) {
+            spiderSprite->m_glowSprite->setVisible(!spiderSprite->m_glowSprite->isVisible());
+        }
+    } else {
+        if (m_previewPlayer->m_outlineSprite) m_previewPlayer->m_outlineSprite->setVisible(!m_previewPlayer->m_outlineSprite->isVisible());
+    }
+}
+
+void IconOffsetEditorPopup::onPlayAnimation(CCObject* sender) {
+    auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
+    auto animName = dynamic_cast<CCString*>(btn->getUserObject());
+    if (!animName) return;
+    
+    if (m_currentIconType == IconType::Robot && m_previewPlayer->m_robotSprite) {
+        m_previewPlayer->m_robotSprite->runAnimation(animName->getCString());
+    } else if (m_currentIconType == IconType::Spider && m_previewPlayer->m_spiderSprite) {
+        m_previewPlayer->m_spiderSprite->runAnimation(animName->getCString());
+    }
+}
+
+void IconOffsetEditorPopup::onPlayBallRotation(CCObject* sender) {
+    if (!m_previewPlayer) return;
+    
+    m_previewPlayer->stopAllActions();
+    m_previewPlayer->setRotation(0);
+    
+    float speed = 0.1f + (m_rotationSpeedSlider->getValue() * 1.9f);
+    
+    auto rotate = CCRotateBy::create(speed, 360.f);
+    auto repeat = CCRepeatForever::create(rotate);
+    m_previewPlayer->runAction(repeat);
+    
+    m_isRotating = true;
+}
+
+void IconOffsetEditorPopup::onStopBallRotation(CCObject* sender) {
+    if (!m_previewPlayer) return;
+    
+    m_previewPlayer->stopAllActions();
+    m_previewPlayer->setRotation(0);
+    m_isRotating = false;
+}
+
+void IconOffsetEditorPopup::onRotationSpeedChanged(CCObject* sender) {
+    float speed = 0.1f + (m_rotationSpeedSlider->getValue() * 1.9f);
+    
+    if (m_rotationSpeedLabel) m_rotationSpeedLabel->setString(fmt::format("{:.1f}s", speed).c_str());
+    if (m_isRotating) onPlayBallRotation(nullptr);
+}
+
+void IconOffsetEditorPopup::onCubeOpacityChanged(CCObject* sender) {
+    if (!m_cubePreview) return;
+    
+    float opacity = m_cubeOpacitySlider->getValue();
+    m_cubePreview->setOpacity(static_cast<GLubyte>(opacity * 255));
+    
+    if (m_cubeOpacityLabel) m_cubeOpacityLabel->setString(fmt::format("{}%", static_cast<int>(opacity * 100)).c_str());
 }
 
 void IconOffsetEditorPopup::highlightSelectedButton() {

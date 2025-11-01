@@ -25,6 +25,15 @@ protected:
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
+
+    CCMenuItemSpriteExtra* m_glowToggler = nullptr;
+    CCLabelBMFont* m_rotationSpeedLabel = nullptr;
+    CCSprite* m_cubePreview = nullptr;
+    Slider* m_cubeOpacitySlider = nullptr;
+    CCLabelBMFont* m_cubeOpacityLabel = nullptr;
+    CCMenu* m_animButtonsMenu = nullptr;
+    Slider* m_rotationSpeedSlider = nullptr;
+    bool m_isRotating = false;
     
     SelectedSpritePart m_selectedPart = SelectedSpritePart::FirstLayer;
     IconType m_currentIconType;
@@ -40,6 +49,12 @@ protected:
     void onPartSelected(CCObject* sender);
     void onUpdateOffsets(CCObject* sender);
     void onToggleGlow(CCObject* sender);
+    void onInfoButton(CCObject* sender);
+    void onPlayAnimation(CCObject* sender);
+    void onPlayBallRotation(CCObject* sender);
+    void onStopBallRotation(CCObject* sender);
+    void onRotationSpeedChanged(CCObject* sender);
+    void onCubeOpacityChanged(CCObject* sender);
     void updateInputFields();
     CCSprite* getCurrentSelectedSprite();
     void highlightSelectedButton();
