@@ -162,7 +162,7 @@ bool IconOffsetEditorPopup::setup() {
     // -----------------------
     if (isRobotOrSpider) {
         m_animButtonsMenu = CCMenu::create();
-        m_animButtonsMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        m_animButtonsMenu->setPosition({lowerMenuX, lowerMenuBaseY - 5.f});
         m_animButtonsMenu->setScale(0.6f);
         m_animButtonsMenu->setContentSize({200.f, 40.f});
         m_animButtonsMenu->setLayout(
@@ -173,9 +173,9 @@ bool IconOffsetEditorPopup::setup() {
         );
         this->m_mainLayer->addChild(m_animButtonsMenu);
 
-        auto animDescLabel = CCLabelBMFont::create("Test Animations", "bigFont.fnt");
+        auto animDescLabel = CCLabelBMFont::create("Test Animations", "goldFont.fnt");
         animDescLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
-        animDescLabel->setScale(0.375f);
+        animDescLabel->setScale(0.3f);
         this->m_mainLayer->addChild(animDescLabel);
         
         if (m_currentIconType == IconType::Robot) {
