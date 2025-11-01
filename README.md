@@ -1,23 +1,7 @@
 # OffsetAssist
-This is where she makes a mod.
+***Offset Assist*** is a very simple tool mod designed for Icon Creators which allows you to Edit and Preview on real time Sprite Offsets for your icons!
 
-<img src="logo.png" width="150" alt="the mod's logo" />
+This mod is mod 
+^ that was typo but it's so fucking funny
 
-*Update logo.png to change your mod's icon (please)*
-
-## Getting started
-We recommend heading over to [the getting started section on our docs](https://docs.geode-sdk.org/getting-started/) for useful info on what to do next.
-
-## Build instructions
-For more info, see [our docs](https://docs.geode-sdk.org/getting-started/create-mod#build)
-```sh
-# Assuming you have the Geode CLI set up already
-geode build
-```
-
-# Resources
-* [Geode SDK Documentation](https://docs.geode-sdk.org/)
-* [Geode SDK Source Code](https://github.com/geode-sdk/geode/)
-* [Geode CLI](https://github.com/geode-sdk/cli)
-* [Bindings](https://github.com/geode-sdk/bindings/)
-* [Dev Tools](https://github.com/geode-sdk/DevTools)
+This mod is meant to be used alongside the More Icons mod, more specifically, its Icon Editor feature. You create the icon first using MoreIcons, then edit the offsets to your liking with Offset Assist. Simple!
