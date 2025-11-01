@@ -1,0 +1,26 @@
+{
+	"geode": "4.9.0",
+	"gd": {
+		"win": "2.2074",
+		"android": "2.2074",
+		"mac": "2.2074",
+		"ios": "2.2074"
+	},
+	"resources": {
+		"sprites": [
+			"resources/*.png"
+		]
+	},
+	"id": "saritahhh.offset_assist",
+	"name": "Offset Assist",
+	"version": "v1.0.0",
+	"developer": "Saritahhh",
+	"description": "I don't wanna reopen the game a million times",
+	"dependencies": {
+		"geode.node-ids": ">=v1.20.0",
+		"hiimjustin000.more_icons": {
+            "version": ">=v1.14.0",
+            "importance": "required"
+        }
+	}
+}
