@@ -198,6 +198,7 @@ bool IconOffsetEditorPopup::setup() {
     m_hitboxDrawNode = CCDrawNode::create();
     m_hitboxDrawNode->setZOrder(10);
     m_hitboxDrawNode->setVisible(false);
+    if (m_currentIconType == IconType::Ship) m_hitboxDrawNode->setPosition({0.f, 10.f});
     this->m_mainLayer->addChild(m_hitboxDrawNode);
 
     drawHitbox();
