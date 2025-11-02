@@ -13,9 +13,12 @@
 	},
 	"id": "saritahhh.offset_assist",
 	"name": "Icon Construct",
-	"version": "v1.0.0-beta.1",
+	"version": "v1.0.0-beta.2",
 	"developer": "Saritahhh",
 	"description": "All-in-one Utils for Icon Creators!",
+	"links": {
+		"source": "https://github.com/DeepRsnanceX/Geode-Icon-Construct"
+	},
 	"dependencies": {
 		"geode.node-ids": ">=v1.20.0",
 		"hiimjustin000.more_icons": {

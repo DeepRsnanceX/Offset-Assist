@@ -301,8 +301,8 @@ bool IconOffsetEditorPopup::setup() {
         m_animButtonsMenu->updateLayout();
         
         // rotation speed slider
-        auto speedLabel = CCLabelBMFont::create("Speed:", "bigFont.fnt");
-        speedLabel->setPosition({lowerMenuX - 45.f, lowerMenuBaseY + 15.f});
+        auto speedLabel = CCLabelBMFont::create("Full Spin Duration:", "bigFont.fnt");
+        speedLabel->setPosition({lowerMenuX - 15.f, lowerMenuBaseY + 15.f});
         speedLabel->setScale(0.3f);
         this->m_mainLayer->addChild(speedLabel);
         
@@ -320,7 +320,7 @@ bool IconOffsetEditorPopup::setup() {
         this->m_mainLayer->addChild(sliderMenu);
         
         m_rotationSpeedLabel = CCLabelBMFont::create("1.0", "bigFont.fnt");
-        m_rotationSpeedLabel->setPosition({lowerMenuX - 15.f, lowerMenuBaseY + 15.f});
+        m_rotationSpeedLabel->setPosition({lowerMenuX + 50.f, lowerMenuBaseY + 15.f});
         m_rotationSpeedLabel->setScale(0.3f);
         this->m_mainLayer->addChild(m_rotationSpeedLabel);
     }
@@ -355,9 +355,9 @@ bool IconOffsetEditorPopup::setup() {
         this->m_mainLayer->addChild(m_cubePreview);
         
         // cube opacity slider
-        auto opacityLabel = CCLabelBMFont::create("Cube Opacity:", "bigFont.fnt");
+        auto opacityLabel = CCLabelBMFont::create("Cube Opacity:", "goldFont.fnt");
         opacityLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
-        opacityLabel->setScale(0.3f);
+        opacityLabel->setScale(0.35f);
         this->m_mainLayer->addChild(opacityLabel);
         
         m_cubeOpacitySlider = Slider::create(
@@ -867,10 +867,7 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
 }
 
 void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
-    if (!node) {
-        log::debug("mapRobotSpiderSprites: node is null");
-        return;
-    }
+    if (!node) return;
     
     static int depth = 0;
     depth++;
@@ -879,8 +876,14 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     
     if (auto sprite = dynamic_cast<CCSprite*>(node)) {
         auto frame = sprite->displayFrame();
-        if (frame) {            
+        if (frame) {
             auto texture = frame->getTexture();
+            if (!texture) {
+                log::debug("{}Sprite has frame but null texture, skipping", indent);
+                depth--;
+                return;
+            }
+            
             auto rect = frame->getRect();
             
             bool matched = false;
@@ -889,6 +892,11 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                 
                 if (cachedFrame) {
                     auto cachedTexture = cachedFrame->getTexture();
+                    if (!cachedTexture) {
+                        log::warn("{}Cached frame has null texture: {}", indent, frameName);
+                        continue;
+                    }
+                    
                     auto cachedRect = cachedFrame->getRect();
                     
                     bool textureMatches = (texture == cachedTexture);
@@ -899,24 +907,21 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                         matched = true;
                         break;
                     }
-                } else {
-                    log::warn("{}couldn't get cached frame for: {}", indent, frameName);
                 }
             }
-            
-            if (!matched) {
-                log::debug("{}couldn't find any frame matches", indent);
-            }
-        } else {
-            log::debug("{}sprite has no display frame????? ok", indent);
         }
     }
     
     if (auto spritePart = dynamic_cast<CCSpritePart*>(node)) {
         auto frame = spritePart->displayFrame();
         if (frame) {
-            
             auto texture = frame->getTexture();
+            if (!texture) {
+                log::warn("{}SpritePart has frame but null texture! skipping, but please check ur icon...", indent);
+                depth--;
+                return;
+            }
+            
             auto rect = frame->getRect();
             
             bool matched = false;
@@ -925,6 +930,11 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                 
                 if (cachedFrame) {
                     auto cachedTexture = cachedFrame->getTexture();
+                    if (!cachedTexture) {
+                        log::warn("{}Cached frame has null texture: {} - skippin, but please check ur icon...", indent, frameName);
+                        continue;
+                    }
+                    
                     auto cachedRect = cachedFrame->getRect();
                     
                     bool textureMatches = (texture == cachedTexture);
@@ -937,15 +947,10 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                     }
                 }
             }
-            
-            if (!matched) {
-                log::debug("{}couldn't find any frame matches", indent);
-            }
-        } else {
-            log::debug("{}sprite has no display frame????? ok 2", indent);
         }
     }
     
+    // Recursively check children
     auto children = node->getChildren();
     if (children && children->count() > 0) {
         CCObject* child;
@@ -954,8 +959,6 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                 mapRobotSpiderSprites(childNode);
             }
         }
-    } else {
-        log::debug("{}el nodo: amor perdi al niño", indent);
     }
     
     depth--;
