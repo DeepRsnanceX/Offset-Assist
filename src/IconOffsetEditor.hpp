@@ -34,6 +34,10 @@ protected:
     CCMenu* m_animButtonsMenu = nullptr;
     Slider* m_rotationSpeedSlider = nullptr;
     bool m_isRotating = false;
+
+    CCDrawNode* m_hitboxDrawNode = nullptr;
+    CCMenuItemSpriteExtra* m_hitboxToggler = nullptr;
+    bool m_showHitbox = false;
     
     SelectedSpritePart m_selectedPart = SelectedSpritePart::FirstLayer;
     IconType m_currentIconType;
@@ -56,6 +60,8 @@ protected:
     void onRotationSpeedChanged(CCObject* sender);
     void onCubeOpacityChanged(CCObject* sender);
     void updateInputFields();
+    void drawHitbox();
+    void onToggleHitbox(CCObject* sender);
     CCSprite* getCurrentSelectedSprite();
     void highlightSelectedButton();
     bool isUnsupportedIconType();

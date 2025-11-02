@@ -1,5 +1,6 @@
 #include "IconOffsetEditor.hpp"
 #include <Geode/modify/GJGarageLayer.hpp>
+#include <Geode/modify/PlayerObject.hpp>
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
 #include <hiimjustin000.more_icons/include/MoreIcons.hpp>
@@ -50,6 +51,25 @@ void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
     
     if (!manager->getPlayerGlow()) {
         player->disableGlowOutline();
+    }
+}
+
+CCSize getHitboxSizeForIconType(IconType iconType) {
+    switch(iconType) {
+        case IconType::Cube:
+        case IconType::Ship:
+        case IconType::Ball:
+        case IconType::Ufo:
+        case IconType::Robot:
+        case IconType::Swing:
+        case IconType::Jetpack:
+            return {30.f * 2.f, 30.f * 2.f};
+        case IconType::Wave:
+            return {10.f * 2.f, 10.f * 2.f};
+        case IconType::Spider:
+            return {27.f * 2.f, 27.f * 2.f};
+        default:
+            return {30.f, 30.f};
     }
 }
 
@@ -123,23 +143,41 @@ bool IconOffsetEditorPopup::setup() {
     this->m_mainLayer->addChild(m_previewPlayer);
 
     // -----------------------
-    // GLOW TOGGLING FUNCTIONS
+    // PREVIEW CONTROLS MENU (Glow + Hitbox)
     // -----------------------
-    auto glowLabel = CCLabelBMFont::create("Toggle\nGlow", "bigFont.fnt");
-    glowLabel->setAlignment(kCCTextAlignmentCenter);
-    glowLabel->setScale(1.1f);
-    auto togglerSpr = CircleButtonSprite::create(glowLabel, CircleBaseColor::Pink, CircleBaseSize::SmallAlt);
-    togglerSpr->setScale(0.8f);
+    auto previewMenu = CCMenu::create();
+    previewMenu->setPosition({midX + 75.0f, midY - 60.f});
+    previewMenu->setContentSize({80.f, 30.f});
+    previewMenu->setLayout(
+        RowLayout::create()
+            ->setGap(6.f)
+            ->setAxisAlignment(AxisAlignment::Center)
+    );
+    this->m_mainLayer->addChild(previewMenu);
+
+    auto glowLabel = CCLabelBMFont::create("Glow", "bigFont.fnt");
+    glowLabel->setScale(0.35f);
+    auto glowSpr = CircleButtonSprite::create(glowLabel, CircleBaseColor::Pink, CircleBaseSize::Small);
+    glowSpr->setScale(0.7f);
     m_glowToggler = CCMenuItemSpriteExtra::create(
-        togglerSpr,
+        glowSpr,
         this,
         menu_selector(IconOffsetEditorPopup::onToggleGlow)
     );
+    previewMenu->addChild(m_glowToggler);
 
-    auto glowMenu = CCMenu::create();
-    glowMenu->addChild(m_glowToggler);
-    glowMenu->setPosition({midX + 75.0f, midY - 60.f});
-    this->m_mainLayer->addChild(glowMenu);
+    auto hitboxLabel = CCLabelBMFont::create("Hitbox", "bigFont.fnt");
+    hitboxLabel->setScale(0.35f);
+    auto hitboxSpr = CircleButtonSprite::create(hitboxLabel, CircleBaseColor::Cyan, CircleBaseSize::Small);
+    hitboxSpr->setScale(0.7f);
+    m_hitboxToggler = CCMenuItemSpriteExtra::create(
+        hitboxSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onToggleHitbox)
+    );
+    previewMenu->addChild(m_hitboxToggler);
+
+    previewMenu->updateLayout();
 
     if (isRobotOrSpider) {
         auto robotSprite = (m_currentIconType == IconType::Robot) ? 
@@ -156,6 +194,13 @@ bool IconOffsetEditorPopup::setup() {
     } else {
         if (m_previewPlayer->m_outlineSprite) m_previewPlayer->m_outlineSprite->setVisible(true);
     }
+
+    m_hitboxDrawNode = CCDrawNode::create();
+    m_hitboxDrawNode->setZOrder(10);
+    m_hitboxDrawNode->setVisible(false);
+    this->m_mainLayer->addChild(m_hitboxDrawNode);
+
+    drawHitbox();
 
     // -----------------------
     // ROBOT/SPIDER ANIMATIONS MENU
@@ -630,6 +675,44 @@ void IconOffsetEditorPopup::onToggleGlow(CCObject* sender) {
         }
     } else {
         if (m_previewPlayer->m_outlineSprite) m_previewPlayer->m_outlineSprite->setVisible(!m_previewPlayer->m_outlineSprite->isVisible());
+    }
+}
+
+void IconOffsetEditorPopup::drawHitbox() {
+    if (!m_hitboxDrawNode || !m_previewPlayer) return;
+    
+    m_hitboxDrawNode->clear();
+    
+    auto hitboxSize = getHitboxSizeForIconType(m_currentIconType);
+    
+    auto playerPos = m_previewPlayer->getPosition();
+    
+    CCRect hitboxRect = {
+        playerPos.x - hitboxSize.width / 2.f,
+        playerPos.y - hitboxSize.height / 2.f,
+        hitboxSize.width,
+        hitboxSize.height
+    };
+    
+    ccColor4F borderColor = {1.0f, 0.0f, 0.0f, 1.0f};
+    ccColor4F fillColor = {1.0f, 0.0f, 0.0f, 0.15f}; 
+    float borderSize = 0.5f;
+    
+    std::array<CCPoint, 4> vertices = {
+        CCPoint{hitboxRect.getMinX(), hitboxRect.getMinY()},
+        CCPoint{hitboxRect.getMinX(), hitboxRect.getMaxY()},
+        CCPoint{hitboxRect.getMaxX(), hitboxRect.getMaxY()},
+        CCPoint{hitboxRect.getMaxX(), hitboxRect.getMinY()}
+    };
+    
+    m_hitboxDrawNode->drawPolygon(vertices.data(), 4, fillColor, borderSize, borderColor);
+}
+
+void IconOffsetEditorPopup::onToggleHitbox(CCObject* sender) {
+    m_showHitbox = !m_showHitbox;
+    
+    if (m_hitboxDrawNode) {
+        m_hitboxDrawNode->setVisible(m_showHitbox);
     }
 }
 
