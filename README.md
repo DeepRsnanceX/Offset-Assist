@@ -11,5 +11,6 @@ The mod also has various utilities for properly testing your icons in its popup:
 - Preview Icon Position in Ship/UFO/Jetpack gamemodes.
 - Preview Any Animation in Robot/Spider gamemodes.
 - Quickly toggle glow visibility on/off.
+- Quick Gameplay-Accurate hitbox preview.
 
 *As of v1.0.0, it is still not possible to automatically apply your changes to your plist file. This is already being worked on and will be added soon!*
