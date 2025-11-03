@@ -649,7 +649,6 @@ std::string IconOffsetEditorPopup::getCurrentRealFrameName() {
         return getRealFrameName(m_currentFrameName);
     }
     
-    // For normal icons, get the frame name from the current sprite
     auto sprite = getCurrentSelectedSprite();
     if (!sprite) {
         log::warn("getCurrentSelectedSprite returned nullptr");
@@ -662,35 +661,45 @@ std::string IconOffsetEditorPopup::getCurrentRealFrameName() {
         return "";
     }
     
-    // Try to get the frame name directly
-    try {
-        std::string frameName = frame->m_strFrameName;
-        if (!frameName.empty()) {
-            return getRealFrameName(frameName);
-        }
-    } catch (...) {
-        log::warn("Failed to get m_strFrameName");
-    }
-    
-    // Fallback: search through the cache
-    auto cache = CCSpriteFrameCache::sharedSpriteFrameCache();
-    if (!cache || !cache->m_pSpriteFrames) {
-        log::warn("Sprite frame cache is null");
+    auto texture = frame->getTexture();
+    if (!texture) {
+        log::warn("Frame has null texture");
         return "";
     }
     
-    CCDictElement* pElement;
-    auto dict = cache->m_pSpriteFrames;
-    CCDICT_FOREACH(dict, pElement) {
-        auto cachedFrame = static_cast<CCSpriteFrame*>(pElement->getObject());
-        if (cachedFrame == frame) {
-            std::string fullName = pElement->getStrKey();
-            log::info("Found frame in cache: {}", fullName);
-            return getRealFrameName(fullName);
+    auto rect = frame->getRect();
+    
+    auto icInfo = MoreIcons::getIcon(m_currentIconType);
+    if (!icInfo || icInfo->frameNames.empty()) {
+        log::warn("Couldn't get IconInfo or frameNames is empty");
+        return "";
+    }
+    
+    for (const auto& fullFrameName : icInfo->frameNames) {
+        auto cachedFrame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(fullFrameName.c_str());
+        
+        if (!cachedFrame) {
+            continue;
+        }
+        
+        auto cachedTexture = cachedFrame->getTexture();
+        if (!cachedTexture) {
+            continue;
+        }
+        
+        auto cachedRect = cachedFrame->getRect();
+        
+        bool textureMatches = (texture == cachedTexture);
+        bool rectMatches = (rect.equals(cachedRect));
+        
+        if (textureMatches && rectMatches) {
+            std::string realName = getRealFrameName(fullFrameName);
+            log::info("Found matching frame: {} -> {}", fullFrameName, realName);
+            return realName;
         }
     }
     
-    log::warn("Frame not found in cache");
+    log::warn("No matching frame found for current sprite");
     return "";
 }
 
