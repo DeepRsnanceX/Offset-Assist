@@ -14,9 +14,8 @@ enum class SelectedSpritePart {
     Dome
 };
 
-// New struct to store offset data per frame
 struct FrameOffsetData {
-    std::string frameName;  // The actual frame name (without mod prefix)
+    std::string frameName;
     CCPoint offset;
 };
 
@@ -52,8 +51,6 @@ protected:
     std::map<std::string, std::vector<CCSprite*>> m_robotSpiderSprites;
     std::map<std::string, CCMenuItemSpriteExtra*> m_frameButtons;
     std::map<SelectedSpritePart, CCMenuItemSpriteExtra*> m_partButtons;
-    
-    // NEW: Store all modified offsets by their real frame name
     std::map<std::string, CCPoint> m_modifiedOffsets;
     
     std::vector<std::string> m_frameNames;
@@ -73,13 +70,11 @@ protected:
     void drawHitbox();
     void onToggleHitbox(CCObject* sender);
     void onSavePlist(CCObject* sender);
-    CCSprite* getCurrentSelectedSprite();
     void highlightSelectedButton();
     bool isUnsupportedIconType();
     void mapRobotSpiderSprites(CCNode* node);
     void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
-    
-    // NEW: Helper to get the real frame name for the current selection
+    CCSprite* getCurrentSelectedSprite();
     std::string getCurrentRealFrameName();
     
 public:
