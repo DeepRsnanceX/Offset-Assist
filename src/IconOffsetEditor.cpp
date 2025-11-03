@@ -74,16 +74,19 @@ CCSize getHitboxSizeForIconType(IconType iconType) {
 }
 
 std::string getRealFrameName(const std::string& fullFrameName) {
-    // input: hiimjustin000.more_icons/saritahhh.personal_mix:00_hof_remix_spider15_retro_01_001.png
-    // output: 00_hof_remix_spider15_retro_01_001.png
-    // (hopefully)
+    std::string result = fullFrameName;
     
-    size_t colonPos = fullFrameName.find(':');
-    if (colonPos != std::string::npos) {
-        return fullFrameName.substr(colonPos + 1);
+    const std::string moreIconsPrefix = "hiimjustin000.more_icons/";
+    if (utils::string::startsWith(result, moreIconsPrefix)) {
+        result = result.substr(moreIconsPrefix.length());
     }
     
-    return fullFrameName;
+    size_t colonPos = result.find(':');
+    if (colonPos != std::string::npos) {
+        result = result.substr(colonPos + 1);
+    }
+    
+    return result;
 }
 
 IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
@@ -462,12 +465,14 @@ bool IconOffsetEditorPopup::setup() {
             m_frameNames = icInfo->frameNames;
             partCount = m_frameNames.size();
             
+            /*
             for (const auto& frameName : m_frameNames) {
                 auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(frameName.c_str());
                 if (frame) {
                     m_storedOffsets[frameName] = frame->getOffsetInPixels();
                 }
             }
+            */
             
             auto targetNode = (m_currentIconType == IconType::Robot) ? 
                 static_cast<CCNode*>(m_previewPlayer->m_robotSprite) : 
@@ -639,26 +644,89 @@ CCSprite* IconOffsetEditorPopup::getCurrentSelectedSprite() {
     return nullptr;
 }
 
-void IconOffsetEditorPopup::updateInputFields() {
+std::string IconOffsetEditorPopup::getCurrentRealFrameName() {
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        if (m_storedOffsets.count(m_currentFrameName)) {
-            auto offset = m_storedOffsets[m_currentFrameName];
-            m_inputX->setString(std::to_string(offset.x));
-            m_inputY->setString(std::to_string(offset.y));
+        return getRealFrameName(m_currentFrameName);
+    }
+    
+    // For normal icons, get the frame name from the current sprite
+    auto sprite = getCurrentSelectedSprite();
+    if (!sprite) {
+        log::warn("getCurrentSelectedSprite returned nullptr");
+        return "";
+    }
+    
+    auto frame = sprite->displayFrame();
+    if (!frame) {
+        log::warn("sprite->displayFrame() returned nullptr");
+        return "";
+    }
+    
+    // Try to get the frame name directly
+    try {
+        std::string frameName = frame->m_strFrameName;
+        if (!frameName.empty()) {
+            return getRealFrameName(frameName);
         }
+    } catch (...) {
+        log::warn("Failed to get m_strFrameName");
+    }
+    
+    // Fallback: search through the cache
+    auto cache = CCSpriteFrameCache::sharedSpriteFrameCache();
+    if (!cache || !cache->m_pSpriteFrames) {
+        log::warn("Sprite frame cache is null");
+        return "";
+    }
+    
+    CCDictElement* pElement;
+    auto dict = cache->m_pSpriteFrames;
+    CCDICT_FOREACH(dict, pElement) {
+        auto cachedFrame = static_cast<CCSpriteFrame*>(pElement->getObject());
+        if (cachedFrame == frame) {
+            std::string fullName = pElement->getStrKey();
+            log::info("Found frame in cache: {}", fullName);
+            return getRealFrameName(fullName);
+        }
+    }
+    
+    log::warn("Frame not found in cache");
+    return "";
+}
+
+void IconOffsetEditorPopup::updateInputFields() {
+    std::string realFrameName = getCurrentRealFrameName();
+    
+    if (realFrameName.empty()) {
+        log::warn("Couldn't get real frame name");
         return;
     }
     
-    auto sprite = getCurrentSelectedSprite();
-    if (!sprite) return;
+    if (m_modifiedOffsets.count(realFrameName)) {
+        auto offset = m_modifiedOffsets[realFrameName];
+        m_inputX->setString(fmt::format("{:.1f}", offset.x));
+        m_inputY->setString(fmt::format("{:.1f}", offset.y));
+        return;
+    }
     
-    auto frame = sprite->displayFrame();
-    if (!frame) return;
-    
-    auto offset = frame->getOffsetInPixels();
-    
-    m_inputX->setString(std::to_string(offset.x));
-    m_inputY->setString(std::to_string(offset.y));
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(m_currentFrameName.c_str());
+        if (frame) {
+            auto offset = frame->getOffsetInPixels();
+            m_inputX->setString(fmt::format("{:.1f}", offset.x));
+            m_inputY->setString(fmt::format("{:.1f}", offset.y));
+        }
+    } else {
+        auto sprite = getCurrentSelectedSprite();
+        if (sprite) {
+            auto frame = sprite->displayFrame();
+            if (frame) {
+                auto offset = frame->getOffsetInPixels();
+                m_inputX->setString(fmt::format("{:.1f}", offset.x));
+                m_inputY->setString(fmt::format("{:.1f}", offset.y));
+            }
+        }
+    }
 }
 
 void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
@@ -849,15 +917,21 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
         if (!xStr.empty()) offsetX = std::stof(xStr);
         if (!yStr.empty()) offsetY = std::stof(yStr);
     } catch (const std::exception& e) {
-        log::error("failed to parse offset values: {}", e.what());
+        log::error("Failed to parse offset values: {}", e.what());
         return;
     }
     
     CCPoint newOffset = {offsetX, offsetY};
+    std::string realFrameName = getCurrentRealFrameName();
+    
+    if (realFrameName.empty()) {
+        log::error("Couldn't determine frame name");
+        return;
+    }
+    
+    m_modifiedOffsets[realFrameName] = newOffset;
     
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        m_storedOffsets[m_currentFrameName] = newOffset;
-        
         auto robotSprite = (m_currentIconType == IconType::Robot) ? 
             m_previewPlayer->m_robotSprite : nullptr;
         auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
@@ -868,31 +942,26 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
         if (targetNode) {
             applyOffsetToAllMatchingSprites(targetNode, m_currentFrameName, newOffset);
         }
-        
-        log::info("updated offset for frame {} to ({}, {})", m_currentFrameName, offsetX, offsetY);
-        return;
+    } else {
+        auto sprite = getCurrentSelectedSprite();
+        if (sprite) {
+            auto frame = sprite->displayFrame();
+            if (frame) {
+                frame->setOffsetInPixels(newOffset);
+                sprite->setDisplayFrame(frame);
+            }
+        }
     }
     
-    auto sprite = getCurrentSelectedSprite();
-    if (!sprite) {
-        log::warn("no sprite selected/sprite is null");
-        return;
-    }
-    
-    auto frame = sprite->displayFrame();
-    if (!frame) {
-        log::warn("selected sprite has no display frame");
-        return;
-    }
-    
-    frame->setOffsetInPixels(newOffset);
-    sprite->setDisplayFrame(frame);
-    
-    log::info("updated offset for {} to ({}, {})", 
-        static_cast<int>(m_selectedPart), offsetX, offsetY);
+    log::info("Updated offset for frame '{}' to ({}, {})", realFrameName, offsetX, offsetY);
 }
 
 void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
+    if (m_modifiedOffsets.empty()) {
+        FLAlertLayer::create("No Changes", "You haven't modified any offsets yet!", "OK")->show();
+        return;
+    }
+    
     auto icInfo = MoreIcons::getIcon(m_currentIconType);
     if (!icInfo) {
         FLAlertLayer::create("Error", "Couldn't get icon info!", "OK")->show();
@@ -906,79 +975,123 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         return;
     }
     
-    auto dict = CCDictionary::createWithContentsOfFile(plistPath.c_str());
-    if (!dict) {
-        FLAlertLayer::create("Error", "Couldn't load plist file.", "OK")->show();
+    // Read the plist file using Geode's utilities
+    auto readResult = utils::file::readString(plistPath);
+    if (!readResult) {
+        FLAlertLayer::create("Error", 
+            fmt::format("Couldn't open plist file for reading.\nError: {}", readResult.unwrapErr()),
+            "OK")->show();
         return;
     }
     
-    auto framesDict = dynamic_cast<CCDictionary*>(dict->objectForKey("frames"));
-    if (!framesDict) {
-        FLAlertLayer::create("Error", "Your plist has no 'frames' key!\nPlease make sure your plist is valid.", "OK")->show();
-        return;
-    }
-    
+    std::string plistContent = readResult.unwrap();
     int updatedCount = 0;
     
-    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        for (const auto& [fullFrameName, offset] : m_storedOffsets) {
-            std::string actualFrameName = getRealFrameName(fullFrameName);
-            
-            auto frameData = dynamic_cast<CCDictionary*>(framesDict->objectForKey(actualFrameName.c_str()));
-            if (!frameData) {
-                log::warn("couldn't find '{}' in plist.", actualFrameName);
-                continue;
-            }
-            
-            auto offsetStr = fmt::format("{{{},{}}}", static_cast<int>(offset.x), static_cast<int>(offset.y));
-            frameData->setObject(CCString::create(offsetStr.c_str()), "spriteOffset");
-            
-            updatedCount++;
-            log::info("saved new offset for {}: {}", actualFrameName, offsetStr);
-        }
-    } else {
-        std::vector<std::pair<SelectedSpritePart, std::string>> parts = {
-            {SelectedSpritePart::FirstLayer, "first"},
-            {SelectedSpritePart::SecondLayer, "second"},
-            {SelectedSpritePart::Outline, "outline"},
-            {SelectedSpritePart::Detail, "detail"}
-        };
-        
-        if (m_currentIconType == IconType::Ufo) {
-            parts.push_back({SelectedSpritePart::Dome, "dome"});
-        }
-        
-        for (const auto& [part, name] : parts) {
-            auto sprite = getCurrentSelectedSprite();
-            if (!sprite) continue;
-            
-            auto frame = sprite->displayFrame();
-            if (!frame) continue;
-            
-            auto offset = frame->getOffsetInPixels();
-            
-            CCDictElement* pElement;
-            CCDICT_FOREACH(framesDict, pElement) {
-                auto frameData = dynamic_cast<CCDictionary*>(pElement->getObject());
-                if (!frameData) continue;
-                
-                auto offsetStr = fmt::format("{{{},{}}}", static_cast<int>(offset.x), static_cast<int>(offset.y));
-                frameData->setObject(CCString::create(offsetStr.c_str()), "spriteOffset");
-                updatedCount++;
-            }
-        }
+    log::info("=== Starting plist save process ===");
+    log::info("Modified offsets to save:");
+    for (const auto& [name, offset] : m_modifiedOffsets) {
+        log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
     }
     
-    if (dict->writeToFile(plistPath.c_str())) {
-        FLAlertLayer::create(
-            "Success!",
-            fmt::format("Updated plist file at <cy>{}</c> with {} changes!", plistPath, updatedCount),
-            "OK"
-        )->show();
-        log::info("edited plist '{}' with {} changes.", plistPath, updatedCount);
-    } else {
-        FLAlertLayer::create("Error", "Failed to write plist file.", "OK")->show();
+    // Update each modified offset in the plist content
+    for (const auto& [frameName, offset] : m_modifiedOffsets) {
+        log::info("Processing frame: '{}'", frameName);
+        
+        // Find the frame section
+        std::string frameKey = fmt::format("<key>{}</key>", frameName);
+        size_t framePos = plistContent.find(frameKey);
+        
+        if (framePos == std::string::npos) {
+            log::warn("Couldn't find frame key '{}' in plist", frameKey);
+            continue;
+        }
+        
+        log::info("Found frame at position {}", framePos);
+        
+        // Find the next <dict> tag (start of frame data)
+        size_t frameDictStart = plistContent.find("<dict>", framePos);
+        if (frameDictStart == std::string::npos) {
+            log::warn("Couldn't find opening <dict> after frame key");
+            continue;
+        }
+        
+        // Find the closing </dict> for this frame
+        size_t frameDictEnd = plistContent.find("</dict>", frameDictStart);
+        if (frameDictEnd == std::string::npos) {
+            log::warn("Couldn't find closing </dict> for frame");
+            continue;
+        }
+        
+        // Now search for spriteOffset within this frame's dict
+        size_t searchStart = frameDictStart;
+        size_t searchEnd = frameDictEnd;
+        
+        std::string frameSection = plistContent.substr(searchStart, searchEnd - searchStart);
+        size_t offsetKeyPos = frameSection.find("<key>spriteOffset</key>");
+        
+        if (offsetKeyPos == std::string::npos) {
+            log::warn("Couldn't find spriteOffset key for frame '{}'", frameName);
+            continue;
+        }
+        
+        // Convert back to absolute position
+        offsetKeyPos += searchStart;
+        
+        log::info("Found spriteOffset at position {}", offsetKeyPos);
+        
+        // Find the string tag after the key
+        size_t stringStart = plistContent.find("<string>", offsetKeyPos);
+        size_t stringEnd = plistContent.find("</string>", offsetKeyPos);
+        
+        // Make sure we're still within the frame's dict
+        if (stringStart == std::string::npos || stringEnd == std::string::npos || 
+            stringStart > frameDictEnd || stringEnd > frameDictEnd) {
+            log::warn("Couldn't find offset string tags within frame boundaries");
+            continue;
+        }
+        
+        // Replace the offset value
+        std::string newOffsetStr = fmt::format("{{{},{}}}", 
+            static_cast<int>(std::round(offset.x)), 
+            static_cast<int>(std::round(offset.y)));
+        
+        log::info("Replacing offset with: {}", newOffsetStr);
+        
+        plistContent.replace(
+            stringStart + 8,  // Length of "<string>"
+            stringEnd - (stringStart + 8),
+            newOffsetStr
+        );
+        
+        updatedCount++;
+        log::info("Successfully updated offset for '{}'", frameName);
     }
+    
+    log::info("=== Plist save complete: {} updates ===", updatedCount);
+    
+    if (updatedCount == 0) {
+        FLAlertLayer::create("Warning", "No offsets were updated in the plist.\nCheck the logs for details.", "OK")->show();
+        return;
+    }
+    
+    // Write the modified content back using Geode's utilities
+    auto writeResult = utils::file::writeString(plistPath, plistContent);
+    if (!writeResult) {
+        FLAlertLayer::create("Error", 
+            fmt::format("Couldn't write to plist file.\nError: {}", writeResult.unwrapErr()),
+            "OK")->show();
+        return;
+    }
+    
+    FLAlertLayer::create(
+        "Success!",
+        fmt::format("Updated plist file with {} changes!\nPath: <cy>{}</c>", updatedCount, plistPath),
+        "OK"
+    )->show();
+    log::info("Successfully edited plist '{}' with {} changes", plistPath, updatedCount);
+    
+    // Clear modified offsets after successful save
+    m_modifiedOffsets.clear();
 }
 
 void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {

@@ -14,6 +14,12 @@ enum class SelectedSpritePart {
     Dome
 };
 
+// New struct to store offset data per frame
+struct FrameOffsetData {
+    std::string frameName;  // The actual frame name (without mod prefix)
+    CCPoint offset;
+};
+
 class IconOffsetEditorPopup : public Popup<> {
 protected:
     bool setup() override;
@@ -25,6 +31,7 @@ protected:
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
+    CCLabelBMFont* m_frameNameLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_glowToggler = nullptr;
     CCLabelBMFont* m_rotationSpeedLabel = nullptr;
@@ -45,7 +52,10 @@ protected:
     std::map<std::string, std::vector<CCSprite*>> m_robotSpiderSprites;
     std::map<std::string, CCMenuItemSpriteExtra*> m_frameButtons;
     std::map<SelectedSpritePart, CCMenuItemSpriteExtra*> m_partButtons;
-    std::map<std::string, CCPoint> m_storedOffsets;
+    
+    // NEW: Store all modified offsets by their real frame name
+    std::map<std::string, CCPoint> m_modifiedOffsets;
+    
     std::vector<std::string> m_frameNames;
     std::string m_currentFrameName;
     
@@ -67,7 +77,10 @@ protected:
     void highlightSelectedButton();
     bool isUnsupportedIconType();
     void mapRobotSpiderSprites(CCNode* node);
-    void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset); // holy fucking long ass function
+    void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
+    
+    // NEW: Helper to get the real frame name for the current selection
+    std::string getCurrentRealFrameName();
     
 public:
     static IconOffsetEditorPopup* create();
