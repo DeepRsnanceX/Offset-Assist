@@ -25,7 +25,7 @@ protected:
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
-    CCLabelBMFont* frameNameLabel = nullptr;
+    CCLabelBMFont* m_frameNameLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_glowToggler = nullptr;
     CCLabelBMFont* m_rotationSpeedLabel = nullptr;
@@ -63,6 +63,7 @@ protected:
     void updateInputFields();
     void drawHitbox();
     void onToggleHitbox(CCObject* sender);
+    void onSavePlist(CCObject* sender);
     CCSprite* getCurrentSelectedSprite();
     void highlightSelectedButton();
     bool isUnsupportedIconType();

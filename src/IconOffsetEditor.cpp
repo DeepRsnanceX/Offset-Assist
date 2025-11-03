@@ -73,6 +73,19 @@ CCSize getHitboxSizeForIconType(IconType iconType) {
     }
 }
 
+std::string getRealFrameName(const std::string& fullFrameName) {
+    // input: hiimjustin000.more_icons/saritahhh.personal_mix:00_hof_remix_spider15_retro_01_001.png
+    // output: 00_hof_remix_spider15_retro_01_001.png
+    // (hopefully)
+    
+    size_t colonPos = fullFrameName.find(':');
+    if (colonPos != std::string::npos) {
+        return fullFrameName.substr(colonPos + 1);
+    }
+    
+    return fullFrameName;
+}
+
 IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
     auto ret = new IconOffsetEditorPopup();
     if (ret->initAnchored(280.0f, 175.0f, "GJ_square01.png")) {
@@ -383,6 +396,17 @@ bool IconOffsetEditorPopup::setup() {
     // -----------------------
     // MAIN OFFSET INPUTS SETUP
     // -----------------------
+
+    m_frameNameLabel = CCLabelBMFont::create("If u read this frameName didn't load ... :(", "chatFont.fnt");
+    m_frameNameLabel->setPosition({lowerMenuX, midY + 40.f});
+    m_frameNameLabel->setScale(0.5f);
+    //m_frameNameLabel->setOpacity(180);
+    this->m_mainLayer->addChild(m_frameNameLabel);
+    
+    if (!m_currentFrameName.empty()) {
+        std::string displayName = getRealFrameName(m_currentFrameName);
+        m_frameNameLabel->setString(fmt::format("{}", displayName).c_str());
+    }
     
     // x offset
     m_labelX = CCLabelBMFont::create("Offset X:", "bigFont.fnt");
@@ -410,18 +434,31 @@ bool IconOffsetEditorPopup::setup() {
     m_inputY->setFilter("0123456789.-");
     this->m_mainLayer->addChild(m_inputY);
     
-    auto updateBtnSprite = CCSprite::createWithSpriteFrameName("GJ_replayBtn_001.png");
-    updateBtnSprite->setScale(0.6f);
+    // action buttons hi
+    auto updateBtnSpr = ButtonSprite::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.7f);
     m_updateButton = CCMenuItemSpriteExtra::create(
-        updateBtnSprite,
+        updateBtnSpr,
         this,
         menu_selector(IconOffsetEditorPopup::onUpdateOffsets)
     );
+
+    auto savePlistSpr = ButtonSprite::create("Apply", "goldFont.fnt", "GJ_button_01.png", 0.7f);
+    auto savePlistBtn = CCMenuItemSpriteExtra::create(
+        savePlistSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onSavePlist)
+    );
     
     auto buttonMenu = CCMenu::create();
-    buttonMenu->setPosition({0.f, 0.f});
+    buttonMenu->setPosition({midX, -20.f});
     buttonMenu->addChild(m_updateButton);
-    m_updateButton->setPosition({size.width, 0.f});
+    buttonMenu->addChild(savePlistBtn);
+    buttonMenu->setLayout(
+        RowLayout::create()
+            ->setGap(4.f)
+            ->setAxisAlignment(AxisAlignment::Center)
+            ->setAxisReverse(false)
+    );
     
     this->m_mainLayer->addChild(buttonMenu);
 
@@ -647,6 +684,11 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
     } else {
         m_selectedPart = static_cast<SelectedSpritePart>(button->getTag());
     }
+
+    if (m_frameNameLabel) {
+        std::string displayName = getRealFrameName(m_currentFrameName);
+        m_frameNameLabel->setString(fmt::format("{}", displayName).c_str());
+    }
     
     updateInputFields();
     highlightSelectedButton();
@@ -866,6 +908,95 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
         static_cast<int>(m_selectedPart), offsetX, offsetY);
 }
 
+void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
+    auto icInfo = MoreIcons::getIcon(m_currentIconType);
+    if (!icInfo) {
+        FLAlertLayer::create("Error", "Couldn't get icon info!", "OK")->show();
+        return;
+    }
+    
+    std::string plistPath = icInfo->sheetName;
+    
+    if (plistPath.empty()) {
+        FLAlertLayer::create("Error", "Couldn't get the icon's plist!\nPlease make sure your Texture Pack path is valid, and you're not trying to edit a zipped texture pack.", "OK")->show();
+        return;
+    }
+    
+    auto dict = CCDictionary::createWithContentsOfFile(plistPath.c_str());
+    if (!dict) {
+        FLAlertLayer::create("Error", "Couldn't load plist file.", "OK")->show();
+        return;
+    }
+    
+    auto framesDict = dynamic_cast<CCDictionary*>(dict->objectForKey("frames"));
+    if (!framesDict) {
+        FLAlertLayer::create("Error", "Your plist has no 'frames' key!\nPlease make sure your plist is valid.", "OK")->show();
+        return;
+    }
+    
+    int updatedCount = 0;
+    
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        for (const auto& [fullFrameName, offset] : m_storedOffsets) {
+            std::string actualFrameName = getRealFrameName(fullFrameName);
+            
+            auto frameData = dynamic_cast<CCDictionary*>(framesDict->objectForKey(actualFrameName.c_str()));
+            if (!frameData) {
+                log::warn("couldn't find '{}' in plist.", actualFrameName);
+                continue;
+            }
+            
+            auto offsetStr = fmt::format("{{{},{}}}", static_cast<int>(offset.x), static_cast<int>(offset.y));
+            frameData->setObject(CCString::create(offsetStr.c_str()), "spriteOffset");
+            
+            updatedCount++;
+            log::info("saved new offset for {}: {}", actualFrameName, offsetStr);
+        }
+    } else {
+        std::vector<std::pair<SelectedSpritePart, std::string>> parts = {
+            {SelectedSpritePart::FirstLayer, "first"},
+            {SelectedSpritePart::SecondLayer, "second"},
+            {SelectedSpritePart::Outline, "outline"},
+            {SelectedSpritePart::Detail, "detail"}
+        };
+        
+        if (m_currentIconType == IconType::Ufo) {
+            parts.push_back({SelectedSpritePart::Dome, "dome"});
+        }
+        
+        for (const auto& [part, name] : parts) {
+            auto sprite = getCurrentSelectedSprite();
+            if (!sprite) continue;
+            
+            auto frame = sprite->displayFrame();
+            if (!frame) continue;
+            
+            auto offset = frame->getOffsetInPixels();
+            
+            CCDictElement* pElement;
+            CCDICT_FOREACH(framesDict, pElement) {
+                auto frameData = dynamic_cast<CCDictionary*>(pElement->getObject());
+                if (!frameData) continue;
+                
+                auto offsetStr = fmt::format("{{{},{}}}", static_cast<int>(offset.x), static_cast<int>(offset.y));
+                frameData->setObject(CCString::create(offsetStr.c_str()), "spriteOffset");
+                updatedCount++;
+            }
+        }
+    }
+    
+    if (dict->writeToFile(plistPath.c_str())) {
+        FLAlertLayer::create(
+            "Success!",
+            fmt::format("Updated plist file at <cy>{}</c> with {} changes!", plistPath, updatedCount),
+            "OK"
+        )->show();
+        log::info("edited plist '{}' with {} changes.", plistPath, updatedCount);
+    } else {
+        FLAlertLayer::create("Error", "Failed to write plist file.", "OK")->show();
+    }
+}
+
 void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     if (!node) return;
     
@@ -950,7 +1081,6 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
         }
     }
     
-    // Recursively check children
     auto children = node->getChildren();
     if (children && children->count() > 0) {
         CCObject* child;
