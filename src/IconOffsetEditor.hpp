@@ -25,7 +25,6 @@ protected:
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
-    CCLabelBMFont* m_frameNameLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_glowToggler = nullptr;
     CCLabelBMFont* m_rotationSpeedLabel = nullptr;

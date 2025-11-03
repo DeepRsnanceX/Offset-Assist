@@ -396,17 +396,6 @@ bool IconOffsetEditorPopup::setup() {
     // -----------------------
     // MAIN OFFSET INPUTS SETUP
     // -----------------------
-
-    m_frameNameLabel = CCLabelBMFont::create("If u read this frameName didn't load ... :(", "chatFont.fnt");
-    m_frameNameLabel->setPosition({lowerMenuX, midY + 40.f});
-    m_frameNameLabel->setScale(0.5f);
-    //m_frameNameLabel->setOpacity(180);
-    this->m_mainLayer->addChild(m_frameNameLabel);
-    
-    if (!m_currentFrameName.empty()) {
-        std::string displayName = getRealFrameName(m_currentFrameName);
-        m_frameNameLabel->setString(fmt::format("{}", displayName).c_str());
-    }
     
     // x offset
     m_labelX = CCLabelBMFont::create("Offset X:", "bigFont.fnt");
@@ -683,11 +672,6 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
         }
     } else {
         m_selectedPart = static_cast<SelectedSpritePart>(button->getTag());
-    }
-
-    if (m_frameNameLabel) {
-        std::string displayName = getRealFrameName(m_currentFrameName);
-        m_frameNameLabel->setString(fmt::format("{}", displayName).c_str());
     }
     
     updateInputFields();
