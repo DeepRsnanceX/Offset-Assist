@@ -5,6 +5,11 @@
 #include <Geode/binding/SimplePlayer.hpp>
 #include <hiimjustin000.more_icons/include/MoreIcons.hpp>
 
+// a girl gotta be honest
+// ty to copilot for helping me figure out how tf to do the auto plist editing feature LOL
+// modding be so fun then BAM
+// u have to write to a file ...
+
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
     auto manager = GameManager::sharedState();
 	int typeAsInt = static_cast<int>(iconType);
