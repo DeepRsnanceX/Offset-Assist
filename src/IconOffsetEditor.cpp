@@ -9,6 +9,8 @@
 // ty to copilot for helping me figure out how tf to do the auto plist editing feature LOL
 // modding be so fun then BAM
 // u have to write to a file ...
+// use ai as a TOOL ppl
+// not to make ur entire fucking job
 
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
     auto manager = GameManager::sharedState();
@@ -149,6 +151,8 @@ bool IconOffsetEditorPopup::setup() {
         this->m_mainLayer->addChild(warningLabel);
         return true;
     }
+    // TODO: MAKE A BUTTON TO SHOW AN MD POPUP EXPLAINING WHY TO AVOID PPL OPENING AN ISSUE CRYING ABOUT THIS
+    // ^ though i'm not sure if i'm submitting this to index yet...
 
     m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
     
@@ -699,7 +703,7 @@ std::string IconOffsetEditorPopup::getCurrentRealFrameName() {
         
         if (textureMatches && rectMatches) {
             std::string realName = getRealFrameName(fullFrameName);
-            log::info("Found matching frame: {} -> {}", fullFrameName, realName);
+            //log::info("Found matching frame: {} -> {}", fullFrameName, realName);
             return realName;
         }
     }
@@ -972,7 +976,7 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
 
 void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     if (m_modifiedOffsets.empty()) {
-        FLAlertLayer::create("No Changes", "You haven't modified any offsets yet!", "OK")->show();
+        FLAlertLayer::create("No Changes", "You haven't changed any offsets yet! There's nothing to modify in your plist.", "OK")->show();
         return;
     }
     
@@ -1001,42 +1005,37 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     std::string plistContent = readResult.unwrap();
     int updatedCount = 0;
     
-    log::info("=== Starting plist save process ===");
-    log::info("Modified offsets to save:");
-    for (const auto& [name, offset] : m_modifiedOffsets) {
-        log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
-    }
+    //log::info("=== Starting plist save process ===");
+    //log::info("Modified offsets to save:");
+    //for (const auto& [name, offset] : m_modifiedOffsets) {
+    //    log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
+    //}
     
-    // Update each modified offset in the plist content
     for (const auto& [frameName, offset] : m_modifiedOffsets) {
-        log::info("Processing frame: '{}'", frameName);
+        log::info("trying to process: '{}'", frameName);
         
-        // Find the frame section
         std::string frameKey = fmt::format("<key>{}</key>", frameName);
         size_t framePos = plistContent.find(frameKey);
         
         if (framePos == std::string::npos) {
-            log::warn("Couldn't find frame key '{}' in plist", frameKey);
+            log::warn("'{}' not found in plist.", frameKey);
             continue;
         }
         
-        log::info("Found frame at position {}", framePos);
+        //log::info("Found frame at position {}", framePos);
         
-        // Find the next <dict> tag (start of frame data)
         size_t frameDictStart = plistContent.find("<dict>", framePos);
         if (frameDictStart == std::string::npos) {
-            log::warn("Couldn't find opening <dict> after frame key");
+            log::warn("Couldn't find opening <dict> after frame key. I know the game could/can load icons with messed up plists, but please format ur icons correctly...");
             continue;
         }
         
-        // Find the closing </dict> for this frame
         size_t frameDictEnd = plistContent.find("</dict>", frameDictStart);
         if (frameDictEnd == std::string::npos) {
-            log::warn("Couldn't find closing </dict> for frame");
+            log::warn("Couldn't find closing </dict> for frame. I know the game could/can load icons with messed up plists, but please format ur icons correctly...");
             continue;
         }
         
-        // Now search for spriteOffset within this frame's dict
         size_t searchStart = frameDictStart;
         size_t searchEnd = frameDictEnd;
         
@@ -1044,51 +1043,46 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         size_t offsetKeyPos = frameSection.find("<key>spriteOffset</key>");
         
         if (offsetKeyPos == std::string::npos) {
-            log::warn("Couldn't find spriteOffset key for frame '{}'", frameName);
+            log::warn("couldn't find spriteOffset key for frame '{}'", frameName);
             continue;
         }
         
-        // Convert back to absolute position
         offsetKeyPos += searchStart;
         
-        log::info("Found spriteOffset at position {}", offsetKeyPos);
+        //log::info("Found spriteOffset at position {}", offsetKeyPos);
         
-        // Find the string tag after the key
         size_t stringStart = plistContent.find("<string>", offsetKeyPos);
         size_t stringEnd = plistContent.find("</string>", offsetKeyPos);
         
-        // Make sure we're still within the frame's dict
         if (stringStart == std::string::npos || stringEnd == std::string::npos || 
             stringStart > frameDictEnd || stringEnd > frameDictEnd) {
             log::warn("Couldn't find offset string tags within frame boundaries");
             continue;
         }
         
-        // Replace the offset value
         std::string newOffsetStr = fmt::format("{{{},{}}}", 
             static_cast<int>(std::round(offset.x)), 
             static_cast<int>(std::round(offset.y)));
         
-        log::info("Replacing offset with: {}", newOffsetStr);
+        //log::info("Replacing offset with: {}", newOffsetStr);
         
         plistContent.replace(
-            stringStart + 8,  // Length of "<string>"
+            stringStart + 8,
             stringEnd - (stringStart + 8),
             newOffsetStr
         );
         
         updatedCount++;
-        log::info("Successfully updated offset for '{}'", frameName);
+        //log::info("Successfully updated offset for '{}'", frameName);
     }
     
-    log::info("=== Plist save complete: {} updates ===", updatedCount);
+    //log::info("=== Plist save complete: {} updates ===", updatedCount);
     
     if (updatedCount == 0) {
-        FLAlertLayer::create("Warning", "No offsets were updated in the plist.\nCheck the logs for details.", "OK")->show();
+        FLAlertLayer::create("Error", "No offsets were updated in the plist.\nCheck the logs for details.", "Aw...")->show();
         return;
     }
     
-    // Write the modified content back using Geode's utilities
     auto writeResult = utils::file::writeString(plistPath, plistContent);
     if (!writeResult) {
         FLAlertLayer::create("Error", 
@@ -1102,9 +1096,8 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         fmt::format("Updated plist file with {} changes!\nPath: <cy>{}</c>", updatedCount, plistPath),
         "OK"
     )->show();
-    log::info("Successfully edited plist '{}' with {} changes", plistPath, updatedCount);
+    log::info("Successfully edited plist at '{}', with {} changes", plistPath, updatedCount);
     
-    // Clear modified offsets after successful save
     m_modifiedOffsets.clear();
 }
 
@@ -1159,7 +1152,7 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
         if (frame) {
             auto texture = frame->getTexture();
             if (!texture) {
-                log::warn("{}SpritePart has frame but null texture! skipping, but please check ur icon...", indent);
+                log::warn("{}SpritePart has frame but null texture! skipping to avoid crash, but please check ur icon...", indent);
                 depth--;
                 return;
             }
@@ -1173,7 +1166,7 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
                 if (cachedFrame) {
                     auto cachedTexture = cachedFrame->getTexture();
                     if (!cachedTexture) {
-                        log::warn("{}Cached frame has null texture: {} - skippin, but please check ur icon...", indent, frameName);
+                        log::warn("{}Cached frame has null texture: {} - skippin to avoid crash, but please check ur icon...", indent, frameName);
                         continue;
                     }
                     
@@ -1221,7 +1214,7 @@ void IconOffsetEditorPopup::applyOffsetToAllMatchingSprites(CCNode* node, const 
                 }
             }
         } else {
-            log::warn("no sprites using: {}", frameName);
+            log::warn("no sprites found using: {}", frameName);
         }
     }
 }
