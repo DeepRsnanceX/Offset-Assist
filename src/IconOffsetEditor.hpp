@@ -46,6 +46,7 @@ protected:
     CCLabelBMFont* m_cubeOpacityLabel = nullptr;
     CCMenu* m_animButtonsMenu = nullptr;
     Slider* m_rotationSpeedSlider = nullptr;
+    CCLabelBMFont* m_iconNameLabel = nullptr;
     bool m_isRotating = false;
 
     CCDrawNode* m_hitboxDrawNode = nullptr;
