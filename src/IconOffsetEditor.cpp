@@ -318,7 +318,7 @@ bool IconOffsetEditorPopup::setup() {
     m_hitboxDrawNode = CCDrawNode::create();
     m_hitboxDrawNode->setZOrder(10);
     m_hitboxDrawNode->setVisible(false);
-    if (m_currentIconType == IconType::Ship) m_hitboxDrawNode->setPosition({0.f, 10.f});
+    //if (m_currentIconType == IconType::Ship) m_hitboxDrawNode->setPosition({0.f, 10.f});
     this->m_mainLayer->addChild(m_hitboxDrawNode);
 
     drawHitbox();
@@ -1034,7 +1034,6 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         return;
     }
     
-    // Read the plist file using Geode's utilities
     auto readResult = utils::file::readString(plistPath);
     if (!readResult) {
         FLAlertLayer::create("Error", 
@@ -1046,11 +1045,11 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     std::string plistContent = readResult.unwrap();
     int updatedCount = 0;
     
-    //log::info("=== Starting plist save process ===");
-    //log::info("Modified offsets to save:");
-    //for (const auto& [name, offset] : m_modifiedOffsets) {
-    //    log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
-    //}
+    log::info("=== Starting plist save process ===");
+    log::info("Modified offsets to save:");
+    for (const auto& [name, offset] : m_modifiedOffsets) {
+        log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
+    }
     
     for (const auto& [frameName, offset] : m_modifiedOffsets) {
         log::info("trying to process: '{}'", frameName);
@@ -1063,7 +1062,7 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
             continue;
         }
         
-        //log::info("Found frame at position {}", framePos);
+        log::info("Found frame at position {}", framePos);
         
         size_t frameDictStart = plistContent.find("<dict>", framePos);
         if (frameDictStart == std::string::npos) {
@@ -1090,7 +1089,7 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         
         offsetKeyPos += searchStart;
         
-        //log::info("Found spriteOffset at position {}", offsetKeyPos);
+        log::info("Found spriteOffset at position {}", offsetKeyPos);
         
         size_t stringStart = plistContent.find("<string>", offsetKeyPos);
         size_t stringEnd = plistContent.find("</string>", offsetKeyPos);
@@ -1105,7 +1104,7 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
             static_cast<int>(std::round(offset.x)), 
             static_cast<int>(std::round(offset.y)));
         
-        //log::info("Replacing offset with: {}", newOffsetStr);
+        log::info("Replacing offset with: {}", newOffsetStr);
         
         plistContent.replace(
             stringStart + 8,
@@ -1114,10 +1113,10 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         );
         
         updatedCount++;
-        //log::info("Successfully updated offset for '{}'", frameName);
+        log::info("Successfully updated offset for '{}'", frameName);
     }
     
-    //log::info("=== Plist save complete: {} updates ===", updatedCount);
+    log::info("=== Plist save complete: {} updates ===", updatedCount);
     
     if (updatedCount == 0) {
         FLAlertLayer::create("Error", "No offsets were updated in the plist.\nCheck the logs for details.", "Aw...")->show();
@@ -1143,67 +1142,177 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
 }
 
 CCImage* IconOffsetEditorPopup::getIconImage() {
+    if (!m_previewPlayer || !m_iconContainerNode) {
+        log::error("Preview player or container node is null");
+        return nullptr;
+    }
+    
     auto origIconPos = m_previewPlayer->getPosition();
+    auto origContainerScale = m_iconContainerNode->getScale();
+    auto origContainerPos = m_iconContainerNode->getPosition();
+    bool origGlowVisible = false;
+    
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
+            m_previewPlayer->m_robotSprite : nullptr;
+        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
+            m_previewPlayer->m_spiderSprite : nullptr;
+        
+        if (robotSprite && robotSprite->m_glowSprite) {
+            origGlowVisible = robotSprite->m_glowSprite->isVisible();
+            robotSprite->m_glowSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
+        }
+        if (spiderSprite && spiderSprite->m_glowSprite) {
+            origGlowVisible = spiderSprite->m_glowSprite->isVisible();
+            spiderSprite->m_glowSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
+        }
+    } else {
+        if (m_previewPlayer->m_outlineSprite) {
+            origGlowVisible = m_previewPlayer->m_outlineSprite->isVisible();
+            m_previewPlayer->m_outlineSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
+        }
+    }
+    
     auto bgCol = Mod::get()->getSettingValue<ccColor4B>("bg-color");
+    
     auto canvasSize = m_iconContainerNode->getContentSize();
     
     int extraW = (m_currentIconType == IconType::Ship) ? 6 : 0;
     int extraH = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 8 : 0;
-    int texWidth = static_cast<int>(canvasSize.width) + extraW;
-    int texHeight = static_cast<int>(canvasSize.height) + extraH;
-
+    
+    int glowMargin = GameManager::sharedState()->getPlayerGlow() ? 6 : 0;
+    
+    int texWidth = static_cast<int>(canvasSize.width * origContainerScale) + extraW + glowMargin;
+    int texHeight = static_cast<int>(canvasSize.height * origContainerScale) + extraH + glowMargin;
+    
+    log::info("Creating render texture: {}x{}", texWidth, texHeight);
+    
     auto renderTex = CCRenderTexture::create(texWidth, texHeight, kCCTexture2DPixelFormat_RGBA8888);
-    if (!renderTex) return nullptr;
-
-    float newPosX = origIconPos.x;
-    float newPosY = origIconPos.y;
-
-    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        newPosY = newPosY - 4.f;
-    } else if (m_currentIconType == IconType::Ufo) {
-        newPosY = newPosY - 3.f;
+    if (!renderTex) {
+        log::error("Failed to create render texture");
+        return nullptr;
     }
-
-    m_previewPlayer->setPosition({newPosX, newPosY});
-
+    
+    m_iconContainerNode->setScale(1.0f);
+    m_iconContainerNode->setPosition({texWidth / 2.0f, texHeight / 2.0f});
+    
+    auto midContainerX = canvasSize.width / 2.f;
+    auto midContainerY = canvasSize.height / 2.f;
+    
+    if (m_currentIconType == IconType::Ship) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY});
+        if (m_cubePreview) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 10.f});
+        }
+    } else if (m_currentIconType == IconType::Robot) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY - 4.f});
+    } else if (m_currentIconType == IconType::Spider) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY - 3.f});
+    } else if (m_currentIconType == IconType::Ufo) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY - 3.f});
+        if (m_cubePreview) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 9.f});
+        }
+    } else if (m_currentIconType == IconType::Jetpack) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY});
+        if (m_cubePreview) {
+            m_cubePreview->setPosition({midContainerX + 12.f, midContainerY + 8.f});
+        }
+    } else {
+        m_previewPlayer->setPosition({midContainerX, midContainerY});
+    }
+    
     renderTex->beginWithClear(bgCol.r / 255.f, bgCol.g / 255.f, bgCol.b / 255.f, bgCol.a / 255.f);
     m_iconContainerNode->visit();
     renderTex->end();
-
-    m_previewPlayer->setPosition({origIconPos.x, origIconPos.y});
-
+    
+    m_iconContainerNode->setScale(origContainerScale);
+    m_iconContainerNode->setPosition(origContainerPos);
+    m_previewPlayer->setPosition(origIconPos);
+    
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
+            m_previewPlayer->m_robotSprite : nullptr;
+        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
+            m_previewPlayer->m_spiderSprite : nullptr;
+        
+        if (robotSprite && robotSprite->m_glowSprite) {
+            robotSprite->m_glowSprite->setVisible(origGlowVisible);
+        }
+        if (spiderSprite && spiderSprite->m_glowSprite) {
+            spiderSprite->m_glowSprite->setVisible(origGlowVisible);
+        }
+    } else {
+        if (m_previewPlayer->m_outlineSprite) {
+            m_previewPlayer->m_outlineSprite->setVisible(origGlowVisible);
+        }
+    }
+    
+    if (m_cubePreview) {
+        auto midContainerX = canvasSize.width / 2.f;
+        auto midContainerY = canvasSize.height / 2.f;
+        
+        if (m_currentIconType == IconType::Ship) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 5.f});
+        } else if (m_currentIconType == IconType::Ufo) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 6.f});
+        } else if (m_currentIconType == IconType::Jetpack) {
+            m_cubePreview->setPosition({midContainerX + 6.f, midContainerY + 4.f});
+        }
+    }
+    
     CCImage* image = renderTex->newCCImage();
-
     return image;
 }
 
 void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
-
+    auto icInfo = MoreIcons::getIcon(m_currentIconType);
+    if (!icInfo) {
+        FLAlertLayer::create("Error", "Couldn't get icon info!", "aw :(")->show();
+        return;
+    }
+    
     auto renderPath = Mod::get()->getSettingValue<std::filesystem::path>("renders-path");
-    IconInfo* renderInfo = MoreIcons::getIcon(m_currentIconType);
+    
+    if (!std::filesystem::exists(renderPath)) std::filesystem::create_directories(renderPath);
+    
     std::string timeString = getCurrentTimeString();
-    std::string renderFilename = fmt::format("{}-{}", renderInfo->shortName, timeString);
-
+    std::string renderFilename = fmt::format("{}-{}.png", icInfo->shortName, timeString);
+    
     auto finalPath = renderPath / renderFilename;
-
+    
+    log::info("rendering icon to: {}", finalPath.string());
+    
     CCImage* render = getIconImage();
-
-    if (render->saveToFile(finalPath.string().c_str(), false)) {
+    
+    if (!render) {
         FLAlertLayer::create(
-            "Rendered",
-            "Icon rendered successfully!",
-            ":D"
-        )->show();
-
-        log::info("rendered icon {} to {}", renderInfo->shortName, finalPath);
-    } else {
-        FLAlertLayer::create(
-            "Error...",
-            "Icon failed to render.",
+            "Error",
+            "Failed to create render image!",
             ":("
         )->show();
+        log::error("getIconImage() returned nullptr");
+        return;
     }
-
+    
+    bool saved = render->saveToFile(finalPath.string().c_str(), false);
+    delete render;
+    
+    if (saved) {
+        FLAlertLayer::create(
+            "Rendered!",
+            fmt::format("Icon rendered successfully!\nSaved to: <cy>{}</c>", finalPath.string()),
+            ":D"
+        )->show();
+        log::info("Successfully rendered icon {} to {}", icInfo->shortName, finalPath.string());
+    } else {
+        FLAlertLayer::create(
+            "Error",
+            fmt::format("Failed to save render to:\n{}", finalPath.string()),
+            ":("
+        )->show();
+        log::error("Failed to save image to file");
+    }
 }
 
 void IconOffsetEditorPopup::onOpenRendersFolder(CCObject* sender) {
