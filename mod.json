@@ -19,7 +19,7 @@
 			"type": "bool",
 			"name": "Update On Text Change",
 			"description": "Attempts to update the Sprite Offsets anytime the Text Inputs are changed. \nToggleable in case this causes instability issues for anyone.",
-			"default": true
+			"default": false
 		},
 		"renders-path": {
 			"type": "folder",
