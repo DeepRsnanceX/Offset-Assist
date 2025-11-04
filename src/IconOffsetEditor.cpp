@@ -652,6 +652,7 @@ bool IconOffsetEditorPopup::setup() {
             ->setAxisReverse(false)
     );
 	buttonMenu->setContentSize({130.f, 30.f});
+	buttonMenu->updateLayout();
 	buttonMenu->setID("lower-button-menu"_spr);
     
     this->m_mainLayer->addChild(buttonMenu);
