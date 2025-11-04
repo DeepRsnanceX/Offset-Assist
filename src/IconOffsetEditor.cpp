@@ -210,7 +210,7 @@ bool IconOffsetEditorPopup::setup() {
     }
 
 	m_iconNameLabel = CCLabelBMFont::create(icInfo->shortName.c_str(), "chatFont.fnt");
-	m_iconNameLabel->setPosition({lowerMenuBaseX, midY + 50.f});
+	m_iconNameLabel->setPosition({lowerMenuX, midY + 50.f});
 	m_iconNameLabel->setScale(0.8f);
 	this->m_mainLayer->addChild(m_iconNameLabel);
 
