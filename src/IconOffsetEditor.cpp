@@ -5,6 +5,7 @@
 #include <Geode/binding/SimplePlayer.hpp>
 #include <hiimjustin000.more_icons/include/MoreIcons.hpp>
 #include <Geode/ui/GeodeUI.hpp>
+#include <random>
 
 // a girl gotta be honest
 // copilot helped me figure out how tf to do the auto plist editing feature LOL
@@ -57,9 +58,15 @@ The mod's main target audience is Icon **Creators** anyway, so, most creators ar
 
 In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!)";
 
-std::string getCurrentTimeString() {
-    auto now = std::chrono::system_clock::now();
-    return std::format("{:%Y%m%d_%H%M%S}", now);
+// this SHOULD'VE been a function to get the current time as a string
+// but now it's just this
+// thank u so much apple for being SOOO FUN to work with ... <3 fck u
+int getRandomInt(int min, int max) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(min, max);
+
+    return distr(gen);
 }
 
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
@@ -1536,8 +1543,7 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
     
     if (!std::filesystem::exists(renderPath)) std::filesystem::create_directories(renderPath);
     
-    std::string timeString = getCurrentTimeString();
-    std::string renderFilename = fmt::format("{}-{}.png", icInfo->shortName, timeString);
+    std::string renderFilename = fmt::format("{}-{}.png", icInfo->shortName, getRandomInt(1, 9999));
     
     auto finalPath = renderPath / renderFilename;
     
