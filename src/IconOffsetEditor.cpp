@@ -171,6 +171,7 @@ bool IconOffsetEditorPopup::setup() {
     );
     topRightMenu->setAnchorPoint({0.5f, 1.f});
     topRightMenu->setContentSize({20.f, 60.f});
+    topRightMenu->updateLayout();
     topRightMenu->setPosition({size.width - 15.f, size.height - 8.f});
     this->m_mainLayer->addChild(topRightMenu);
     
