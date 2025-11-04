@@ -246,6 +246,7 @@ bool IconOffsetEditorPopup::setup() {
             ->setAxisAlignment(AxisAlignment::End)
             ->setAxisReverse(true)
     );
+	topRightMenu->setID("top-right-menu"_spr);
     topRightMenu->setScale(0.8f);
     topRightMenu->setAnchorPoint({1.f, 1.f});
     topRightMenu->setContentSize({60.f, 20.f});
@@ -265,6 +266,8 @@ bool IconOffsetEditorPopup::setup() {
     optionsBtnMenu->setPosition({0.f, 0.f});
     optionsBtnMenu->addChild(optionsBtn02Btn);
     optionsBtn02Btn->setPosition({0.f, 0.f});
+
+	optionsBtnMenu->setID("options-menu"_spr);
 
     this->m_mainLayer->addChild(optionsBtnMenu);
 
@@ -301,7 +304,7 @@ bool IconOffsetEditorPopup::setup() {
 
     auto colLabelsNode = CCNode::create();
     colLabelsNode->setContentSize(m_colorPickerMenu->getContentSize());
-    colLabelsNode->setPosition({m_colorPickerMenu->getPositionX() - 25.f, m_colorPickerMenu->getPositionY()});
+    colLabelsNode->setPosition({m_colorPickerMenu->getPositionX() - 30.f, m_colorPickerMenu->getPositionY()});
     
     auto col1Label = CCLabelBMFont::create("Col 1", "bigFont.fnt");
     auto col2Label = CCLabelBMFont::create("Col 2", "bigFont.fnt");
@@ -648,6 +651,8 @@ bool IconOffsetEditorPopup::setup() {
             ->setAxisAlignment(AxisAlignment::Center)
             ->setAxisReverse(false)
     );
+	buttonMenu->setContentSize({130.f, 30.f});
+	buttonMenu->setID("lower-button-menu"_spr);
     
     this->m_mainLayer->addChild(buttonMenu);
 
