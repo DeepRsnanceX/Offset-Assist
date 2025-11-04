@@ -24,6 +24,11 @@ In the Main Popup, you will find various things, such as the **Offset Input Fiel
 To the right side of the text inputs you will see the icon you're currently editing. This is the **Live Preview**, where your offset changes will be applied live.
 This **Live Preview** will also be where you'll be able to preview the Robot/Spider animations, ball rolling, and Cube position!
 
+Right under the main popup you will find 2 buttons, labeled "Update" and "Apply":
+
+- The "Update" button will apply any changes you've made to the Frame Offsets in the Popup's input fields. (Or, in the mod's settings, u can find a setting to enable automatically applying changes any time the Input fields changes! This is off by default due to stability concerns).
+- The "Apply" button will automatically edit your Icon's plist file to apply your changed offsets!
+
 At the right side of the mod's popup you will see a little *"Side-menu"*, this is where you can choose which Icon Sprite to edit! When you click on one, it'll be selected and show a small flashing animation to show it's the currently selected Sprite, and of course, once an icon is selected, the Text Inputs will edit that Sprite's offsets.
 
 Under the Live Preview you will find 2 buttons, these essentially act as Togglers for the **Live Preview's Glow** and the **Hitbox Preview**.
@@ -54,10 +59,7 @@ In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIc
 
 std::string getCurrentTimeString() {
     auto now = std::chrono::system_clock::now();
-    auto time_t = std::chrono::system_clock::to_time_t(now);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
-    return ss.str();
+    return std::format("{:%Y%m%d_%H%M%S}", now);
 }
 
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
@@ -307,7 +309,7 @@ bool IconOffsetEditorPopup::setup() {
             ->setGap(4.0f)
             ->setAxisAlignment(AxisAlignment::Even)
             ->setAxisReverse(true)
-            ->setAutoScale(false);
+            ->setAutoScale(false)
     );
 
     colLabelsNode->setAnchorPoint({0.5f, 0.5f});
