@@ -4,13 +4,53 @@
 #include <Geode/binding/GameManager.hpp>
 #include <Geode/binding/SimplePlayer.hpp>
 #include <hiimjustin000.more_icons/include/MoreIcons.hpp>
+#include <Geode/ui/GeodeUI.hpp>
 
 // a girl gotta be honest
-// ty to copilot for helping me figure out how tf to do the auto plist editing feature LOL
+// copilot helped me figure out how tf to do the auto plist editing feature LOL
+// i was a little lost on some stuff and didn't wanna bother anyone else
 // modding be so fun then BAM
 // u have to write to a file ...
+// lesson of the day
 // use ai as a TOOL ppl
 // not to make ur entire fucking job
+// :thumbsup:
+
+std::string infoStr = R"(# Icon Workbench
+Welcome to the ***Icon Workbench Menu***!!
+In here, you will find all the mod's tools to assist you with your Icon Creating process! You've probably already read the mod's info page, so i'll just give you some extra guidance on what everything here does!
+
+In the Main Popup, you will find various things, such as the **Offset Input Fields**, which is where you can edit your Icon Sprite Offsets to your liking! 
+To the right side of the text inputs you will see the icon you're currently editing. This is the **Live Preview**, where your offset changes will be applied live.
+This **Live Preview** will also be where you'll be able to preview the Robot/Spider animations, ball rolling, and Cube position!
+
+At the right side of the mod's popup you will see a little *"Side-menu"*, this is where you can choose which Icon Sprite to edit! When you click on one, it'll be selected and show a small flashing animation to show it's the currently selected Sprite, and of course, once an icon is selected, the Text Inputs will edit that Sprite's offsets.
+
+Under the Live Preview you will find 2 buttons, these essentially act as Togglers for the **Live Preview's Glow** and the **Hitbox Preview**.
+
+At the left side of the menu, outside the Main Popup you will find 3 Buttons, these will allow you to change the **Live Preview Colors** directly from the Mod's popup!
+
+At the top right corner of the main Popup there's a small menu (which you already saw because u clicked this button) where you will find 3 buttons:
+- The first one shows this info popup (hi :3)
+- The second one opens your chosen Renders Folder.
+- The third one is the **Render Icon Button**!
+
+The **Render Icon** button will immediately render your Live Preview right as it is in its current state to a PNG image! It'll be saved to your chosen Renders folder, which you can customize via the mod's settings menu. By default, they'll be saved to a "Renders" folder inside the mod's config folder.)";
+
+std::string whyStr = R"(## Why aren't vanilla icons supported?
+
+The **MoreIcons** mod provides simple and quick ways to know various things this mod heavily utilizes:
+
+- Where is the .plist file for an Icon located
+- A full list of frame names for an Icon
+- The Icon's name
+- When necessary, the Texture Pack's ID/Name
+
+Fetching these things without MoreIcons for Vanilla Icons would get very annoying VERY quickly. Therefore, the mod relies on MoreIcons to function properly.
+
+The mod's main target audience is Icon **Creators** anyway, so, most creators are probably using MoreIcons to load their icons without touching their vanilla icon list (Or should be, at least. Trust me, it's a whoooole 'nother world.)
+
+In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!)";
 
 std::string getCurrentTimeString() {
     auto now = std::chrono::system_clock::now();
@@ -115,7 +155,7 @@ IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
 }
 
 bool IconOffsetEditorPopup::setup() {
-    this->setTitle("Icon Offset Editor");
+    this->setTitle("Icon Workbench");
 
     auto manager = GameManager::sharedState();
     m_currentIconType = manager->m_playerIconType;
@@ -131,6 +171,34 @@ bool IconOffsetEditorPopup::setup() {
     const float inputYTop = midY + 25.0f;
     const float lowerMenuX = midX - 55.f;
     const float lowerMenuBaseY = midY - 52.5f;
+
+    // -----------------------
+    // DISABLE FOR VANILLA ICONS (L bozo sorry it's easier to work with MI)
+    // -----------------------
+    if (!icInfo) {
+        auto warningLabel = CCLabelBMFont::create("Vanilla icons are not supported!\nPlease load your icons via\nMore Icons instead.", "bigFont.fnt");
+        warningLabel->setPosition({midX, midY});
+        warningLabel->setScale(0.4f);
+        warningLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+        warningLabel->setColor({255, 0, 0});
+
+        auto whySpr = ButtonSprite::create("Why?", "goldFont.fnt", "GJ_button_01.png", 0.7f);
+        auto whyBtn = CCMenuItemSpriteExtra::create(
+            whySpr,
+            this,
+            menu_selector(IconOffsetEditorPopup::onWhy)
+        );
+
+        auto whyMenu = CCMenu::create();
+        whyMenu->setPosition({0.f, 0.f});
+        whyMenu->addChild(whyBtn);
+
+        whyBtn->setPosition({midX, midY - 45.f});
+        
+        this->m_mainLayer->addChild(warningLabel);
+        this->m_mainLayer->addChild(whyMenu);
+        return true;
+    }
 
     // -----------------------
     // TOP RIGHT BUTTON MENU
@@ -164,16 +232,32 @@ bool IconOffsetEditorPopup::setup() {
     topRightMenu->addChild(openFolderBtn);
     topRightMenu->addChild(renderBtn);
     topRightMenu->setLayout(
-        ColumnLayout::create()
+        RowLayout::create()
             ->setGap(3.0f)
             ->setAxisAlignment(AxisAlignment::End)
             ->setAxisReverse(true)
     );
-    topRightMenu->setAnchorPoint({0.5f, 1.f});
-    topRightMenu->setContentSize({20.f, 60.f});
+    topRightMenu->setScale(0.8f);
+    topRightMenu->setAnchorPoint({1.f, 1.f});
+    topRightMenu->setContentSize({60.f, 20.f});
     topRightMenu->updateLayout();
-    topRightMenu->setPosition({size.width - 15.f, size.height - 8.f});
+    topRightMenu->setPosition({size.width - 8.f, size.height - 13.f});
     this->m_mainLayer->addChild(topRightMenu);
+
+    // -----------------------
+    // SETTINGS BUTTON THINGY HI
+    // -----------------------
+
+    auto optionsBtn02Spr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
+    auto optionsBtn02Btn = CCMenuItemSpriteExtra::create(optionsBtn02Spr, this, menu_selector(IconOffsetEditorPopup::onModSettings));
+    auto optionsBtnMenu = CCMenu::create();
+
+    optionsBtn02Spr->setScale(0.8f);
+    optionsBtnMenu->setPosition({0.f, 0.f});
+    optionsBtnMenu->addChild(optionsBtn02Btn);
+    optionsBtn02Btn->setPosition({0.f, 0.f});
+
+    this->m_mainLayer->addChild(optionsBtnMenu);
 
     // -----------------------
     // LEFT SIDE MENU
@@ -203,23 +287,40 @@ bool IconOffsetEditorPopup::setup() {
     m_colorPickerMenu->updateLayout();
     m_colorPickerMenu->setPosition({-20.f, midY});
     this->m_mainLayer->addChild(m_colorPickerMenu);
-    
-    // -----------------------
-    // DISABLE FOR VANILLA ICONS (L bozo sorry it's easier to work with MI)
-    // -----------------------
-    if (!icInfo) {
-        auto warningLabel = CCLabelBMFont::create("Vanilla icons are not supported!\nPlease load your icons via\nMore Icons instead.", "bigFont.fnt");
-        warningLabel->setPosition({size.width / 2.0f, size.height / 2.0f});
-        warningLabel->setScale(0.4f);
-        warningLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
-        warningLabel->setColor({255, 0, 0});
-        this->m_mainLayer->addChild(warningLabel);
-        return true;
-    }
-    // TODO: MAKE A BUTTON TO SHOW AN MD POPUP EXPLAINING WHY TO AVOID PPL OPENING AN ISSUE CRYING ABOUT THIS
-    // ^ though i'm not sure if i'm submitting this to index yet...
 
     m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
+
+    auto colLabelsNode = CCNode::create();
+    colLabelsNode->setContentSize(m_colorPickerMenu->getContentSize());
+    colLabelsNode->setPosition({m_colorPickerMenu->getPositionX() - 25.f, m_colorPickerMenu->getPositionY()});
+    
+    auto col1Label = CCLabelBMFont::create("Col 1", "bigFont.fnt");
+    auto col2Label = CCLabelBMFont::create("Col 2", "bigFont.fnt");
+    auto col3Label = CCLabelBMFont::create("Glow", "bigFont.fnt");
+
+    col1Label->setScale(0.3f);
+    col2Label->setScale(0.3f);
+    col3Label->setScale(0.3f);
+
+    col1Label->setOpacity(160);
+    col2Label->setOpacity(160);
+    col3Label->setOpacity(160);
+
+    colLabelsNode->setLayout(
+        ColumnLayout::create()
+            ->setGap(4.0f)
+            ->setAxisAlignment(AxisAlignment::Even)
+            ->setAxisReverse(true)
+            ->setAutoScale(false);
+    );
+
+    colLabelsNode->setAnchorPoint({0.5f, 0.5f});
+    colLabelsNode->addChild(col1Label);
+    colLabelsNode->addChild(col2Label);
+    colLabelsNode->addChild(col3Label);
+    colLabelsNode->updateLayout();
+
+    this->m_mainLayer->addChild(colLabelsNode);
     
     // -----------------------
     // SETUP ICON CONTAINER NODE
@@ -490,6 +591,11 @@ bool IconOffsetEditorPopup::setup() {
     m_inputX->setScale(0.7f);
     m_inputX->setFilter("0123456789.-");
     this->m_mainLayer->addChild(m_inputX);
+    if (Mod::get()->getSettingValue<bool>("update-offsets-live")) {
+        m_inputX->setCallback([this](std::string const&) {
+            this->onUpdateOffsets(nullptr);
+        });
+    }
     
     // y offset
     m_labelY = CCLabelBMFont::create("Offset Y:", "bigFont.fnt");
@@ -503,6 +609,11 @@ bool IconOffsetEditorPopup::setup() {
     m_inputY->setScale(0.7f);
     m_inputY->setFilter("0123456789.-");
     this->m_mainLayer->addChild(m_inputY);
+    if (Mod::get()->getSettingValue<bool>("update-offsets-live")) {
+        m_inputY->setCallback([this](std::string const&) {
+            this->onUpdateOffsets(nullptr);
+        });
+    }
     
     // action buttons hi
     auto updateBtnSpr = ButtonSprite::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.7f);
@@ -834,11 +945,11 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
 }
 
 void IconOffsetEditorPopup::onInfoButton(CCObject* sender) {
-    FLAlertLayer::create(
-        "Offset Assist",
-        "This is the Icon Offset Editor Menu!\nIn here, you can modify the sprite offsets of each individual Icon Sprite.\nOnce you've made some changes, click on the Refresh button on the lower right corner to refresh the Preview and check how those new offsets look!\nThere's also some buttons to preview Robot/Spider animations, Ball rolling, Cube pos, anything u may need!",
-        "OK"
-    )->show();
+    MDPopup::create("Icon Construct Info", infoStr, "OK", nullptr, static_cast<std::function<void(bool)>>(nullptr))->show();
+}
+
+void IconOffsetEditorPopup::onWhy(CCObject* sender) {
+    MDPopup::create("Icon Construct Info", whyStr, "OK", nullptr, static_cast<std::function<void(bool)>>(nullptr))->show();
 }
 
 void IconOffsetEditorPopup::onToggleGlow(CCObject* sender) {
@@ -1138,138 +1249,216 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
 }
 
 void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
+    bool backupWasMade;
+
     if (m_modifiedOffsets.empty()) {
         FLAlertLayer::create("No Changes", "You haven't changed any offsets yet! There's nothing to modify in your plist.", "OK")->show();
         return;
     }
-    
+
     auto icInfo = MoreIcons::getIcon(m_currentIconType);
     if (!icInfo) {
         FLAlertLayer::create("Error", "Couldn't get icon info!", "OK")->show();
         return;
     }
-    
+
     std::string plistPath = icInfo->sheetName;
-    
+
     if (plistPath.empty()) {
         FLAlertLayer::create("Error", "Couldn't get the icon's plist!\nPlease make sure your Texture Pack path is valid, and you're not trying to edit a zipped texture pack.", "OK")->show();
         return;
     }
-    
+
+    m_logStream.str("");
+    addToLog("## Plist Save Process", 0);
+
     std::string backupPath = plistPath + ".bak";
     auto readResult = utils::file::readString(plistPath);
     if (!readResult) {
-        FLAlertLayer::create("Error", 
-            fmt::format("Couldn't open plist file for reading.\nError: {}", readResult.unwrapErr()),
-            "OK")->show();
+        std::string errorMsg = fmt::format("**<cr>Error:</c>** couldn't read contents of plist file.\n\n**Error Details:**\n```\n{}\n```", readResult.unwrapErr());
+
+        geode::MDPopup::create(
+            "Plist Save Failed",
+            errorMsg,
+            "OK", nullptr,
+            [](bool) {}
+        )->show();
         return;
     }
-    
+
     std::string plistContent = readResult.unwrap();
-    
+
+    // Create backup
     auto backupResult = utils::file::writeString(backupPath, plistContent);
     if (!backupResult) {
-        log::warn("failed to create backup file: {}", backupPath);
+        backupWasMade = false;
+        addToLog(fmt::format("<cy>Warning:</c> Failed to create backup file at {}.", backupPath), 2);
+        //log::warn("Failed to create backup file: {}", backupPath);
     } else {
-        log::info("created plist backup at: {}", backupPath);
+        backupWasMade = true;
+        //log::info("Created plist backup at: {}", backupPath);
     }
-    
+
+    addToLog("---", 2);
+    addToLog("### Modified Offsets:", 2);
+
     int updatedCount = 0;
-    
-    log::info("=== Starting plist save process ===");
-    log::info("Modified offsets to save:");
-    for (const auto& [name, offset] : m_modifiedOffsets) {
-        log::info("  - '{}': ({}, {})", name, offset.x, offset.y);
-    }
-    
+    std::vector<std::string> successfulUpdates;
+    std::vector<std::string> failedUpdates;
+
     for (const auto& [frameName, offset] : m_modifiedOffsets) {
-        log::info("trying to process: '{}'", frameName);
-        
         std::string frameKey = fmt::format("<key>{}</key>", frameName);
         size_t framePos = plistContent.find(frameKey);
-        
+
         if (framePos == std::string::npos) {
-            log::warn("'{}' not found in plist.", frameKey);
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> frame **{}** not found in plist.", frameName));
+            //log::warn("'{}' not found in plist", frameKey);
             continue;
         }
-        
-        log::info("Found frame at position {}", framePos);
-        
+
         size_t frameDictStart = plistContent.find("<dict>", framePos);
         if (frameDictStart == std::string::npos) {
-            log::warn("Couldn't find opening <dict> after frame key. I know the game could/can load icons with messed up plists, but please format ur icons correctly...");
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> opening <dict> for frame **{}** not found. ", frameName));
+            //log::warn("Couldn't find opening <dict> for frame '{}'", frameName);
             continue;
         }
-        
+
         size_t frameDictEnd = plistContent.find("</dict>", frameDictStart);
         if (frameDictEnd == std::string::npos) {
-            log::warn("Couldn't find closing </dict> for frame. I know the game could/can load icons with messed up plists, but please format ur icons correctly...");
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> closing </dict> for frame **{}** not found.", frameName));
+            //log::warn("Couldn't find closing </dict> for frame '{}'", frameName);
             continue;
         }
-        
+
         size_t searchStart = frameDictStart;
         size_t searchEnd = frameDictEnd;
-        
+
         std::string frameSection = plistContent.substr(searchStart, searchEnd - searchStart);
         size_t offsetKeyPos = frameSection.find("<key>spriteOffset</key>");
-        
+
         if (offsetKeyPos == std::string::npos) {
-            log::warn("couldn't find spriteOffset key for frame '{}'", frameName);
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> spriteOffset for frame **{}** not found.", frameName));
+            //log::warn("Couldn't find spriteOffset key for frame '{}'", frameName);
             continue;
         }
-        
+
         offsetKeyPos += searchStart;
-        
-        log::info("Found spriteOffset at position {}", offsetKeyPos);
-        
+
         size_t stringStart = plistContent.find("<string>", offsetKeyPos);
         size_t stringEnd = plistContent.find("</string>", offsetKeyPos);
-        
-        if (stringStart == std::string::npos || stringEnd == std::string::npos || 
+
+        if (stringStart == std::string::npos || stringEnd == std::string::npos ||
             stringStart > frameDictEnd || stringEnd > frameDictEnd) {
-            log::warn("Couldn't find offset string tags within frame boundaries");
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> spriteOffset string tags for frame **{}** not found.", frameName));
+            //log::warn("Couldn't find offset string tags for frame '{}'", frameName);
             continue;
         }
-        
-        std::string newOffsetStr = fmt::format("{{{},{}}}", 
-            static_cast<int>(std::round(offset.x)), 
+
+        std::string newOffsetStr = fmt::format("{{{},{}}}",
+            static_cast<int>(std::round(offset.x)),
             static_cast<int>(std::round(offset.y)));
-        
-        log::info("Replacing offset with: {}", newOffsetStr);
-        
+
         plistContent.replace(
             stringStart + 8,
             stringEnd - (stringStart + 8),
             newOffsetStr
         );
-        
+
+        successfulUpdates.push_back(fmt::format("**{}**: `{}`", frameName, newOffsetStr));
         updatedCount++;
-        log::info("Successfully updated offset for '{}'", frameName);
+        //log::info("Successfully updated offset for '{}'", frameName);
     }
-    
-    log::info("=== Plist save complete: {} updates ===", updatedCount);
-    
+
+    if (!successfulUpdates.empty()) {
+        addToLog(fmt::format("### <cg>Successfully Applied Updates: ({})</c>", updatedCount), 2);
+        for (const auto& update : successfulUpdates) {
+            addToLog(fmt::format("- <cg>{}</c>", update), 0);
+            
+        }
+    }
+
+    if (!failedUpdates.empty()) {
+        addToLog(fmt::format("### <cr>Unapplied/Failed Updates ({})</c>", failedUpdates.size()), 2);
+        for (const auto& failure : failedUpdates) {
+            addToLog(fmt::format("- <cr>{}</c>", failure), 0);
+        }
+    }
+
     if (updatedCount == 0) {
-        FLAlertLayer::create("Error", "No offsets were updated in the plist.\nCheck the logs for details.", "Aw...")->show();
+        addToLog("<cr>**Error:**</c> No offsets updated on plist file.", 2);
+        addToLog("Please check the failed updates above for details, and send the log in your bug report if you think this is a mod issue.", 0);
+
+        std::string finalLog = m_logStream.str();
+
+        geode::MDPopup::create(
+            "Plist Save Failed",
+            finalLog,
+            "OK", "Copy Log",
+            [finalLog](bool btn2) {
+                if (btn2) {
+                    utils::clipboard::write(finalLog);
+                    Notification::create("Log copied to clipboard!", NotificationIcon::Success)->show();
+                }
+            }
+        )->show();
         return;
     }
-    
+
     auto writeResult = utils::file::writeString(plistPath, plistContent);
     if (!writeResult) {
-        FLAlertLayer::create("Error", 
-            fmt::format("Couldn't write to plist file.\nError: {}", writeResult.unwrapErr()),
-            "OK")->show();
+        addToLog("<cr>**Error:**</c> Failed to write to plist file.", 2);
+        addToLog(fmt::format("**Error Details:**\n```\n{}\n```", writeResult.unwrapErr()), 0);
+
+        std::string finalLog = m_logStream.str();
+
+        geode::MDPopup::create(
+            "Plist Save Failed",
+            finalLog,
+            "OK", "Copy Log",
+            [finalLog](bool btn2) {
+                if (btn2) {
+                    utils::clipboard::write(finalLog);
+                    Notification::create("Log copied to clipboard!", NotificationIcon::Success)->show();
+                }
+            }
+        )->show();
         return;
     }
-    
-    FLAlertLayer::create(
-        "Success!",
-        fmt::format("Updated plist file with {} changes!\nSaved backup as: <cy>{}</c>\nPath: <cy>{}</c>", updatedCount, backupPath, plistPath),
-        "OK"
+
+    addToLog("---", 2);
+    addToLog("## <cg>Success!</c>", 2);
+    addToLog(fmt::format("Plist file successfully updated with **{}** changes!", updatedCount), 2);
+    addToLog(fmt::format("**Plist Path:**\n`{}`", plistPath), 1);
+    addToLog(fmt::format("**Backup Path:**\n`{}`", backupPath), 1);
+    addToLog("<cy>Remember to reload textures to see the applied changes!</c>", 2);
+    if (backupWasMade) {
+        addToLog("---", 2);
+        addToLog("<cg>Plist backup created successfully!</c>", 2);
+        addToLog(fmt::format("**Backup created at:** `{}`", backupPath), 1);
+    }
+
+    std::string finalLog = m_logStream.str();
+
+    geode::MDPopup::create(
+        "Plist Saved Successfully",
+        finalLog,
+        "OK", "Copy Log",
+        [finalLog](bool btn2) {
+            if (btn2) {
+                utils::clipboard::write(finalLog);
+                Notification::create("Log copied to clipboard!", NotificationIcon::Success)->show();
+            }
+        }
     )->show();
-    log::info("Successfully edited plist at '{}', with {} changes", plistPath, updatedCount);
-    
+
+    //log::info("Successfully edited plist at '{}', with {} changes", plistPath, updatedCount);
+
     m_modifiedOffsets.clear();
+}
+
+void IconOffsetEditorPopup::addToLog(const std::string& logMsg, int newLines) {
+    for (int i = 0; i < newLines; ++i) m_logStream << "\n";
+    m_logStream << logMsg << "\n";
 }
 
 CCImage* IconOffsetEditorPopup::getIconImage() {
@@ -1278,79 +1467,58 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
         return nullptr;
     }
     
-    // Store original states
     auto origIconPos = m_previewPlayer->getPosition();
     auto origContainerScale = m_iconContainerNode->getScale();
     auto origContainerPos = m_iconContainerNode->getPosition();
-    bool origGlowVisible = false;
-    
-    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
-            m_previewPlayer->m_robotSprite : nullptr;
-        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
-            m_previewPlayer->m_spiderSprite : nullptr;
-        
-        if (robotSprite && robotSprite->m_glowSprite) {
-            origGlowVisible = robotSprite->m_glowSprite->isVisible();
-            robotSprite->m_glowSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
-        }
-        if (spiderSprite && spiderSprite->m_glowSprite) {
-            origGlowVisible = spiderSprite->m_glowSprite->isVisible();
-            spiderSprite->m_glowSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
-        }
-    } else {
-        if (m_previewPlayer->m_outlineSprite) {
-            origGlowVisible = m_previewPlayer->m_outlineSprite->isVisible();
-            m_previewPlayer->m_outlineSprite->setVisible(GameManager::sharedState()->getPlayerGlow());
-        }
-    }
     
     auto bgCol = Mod::get()->getSettingValue<ccColor4B>("bg-color");
     
-    // Use the container size directly - it's already set up correctly
     auto canvasSize = m_iconContainerNode->getContentSize();
     
-    int texWidth = static_cast<int>(canvasSize.width);
-    int texHeight = static_cast<int>(canvasSize.height);
+    int extraW = (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo) ? 6 : 0;
+    int extraH = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 8 : 0;
     
-    log::info("Creating render texture: {}x{}", texWidth, texHeight);
+    int texWidth = static_cast<int>(canvasSize.width) + extraW;
+    int texHeight = static_cast<int>(canvasSize.height) + extraH;
     
     auto renderTex = CCRenderTexture::create(texWidth, texHeight, kCCTexture2DPixelFormat_RGBA8888);
     if (!renderTex) {
-        log::error("Failed to create render texture");
+        log::warn("couldn't create render texture.");
         return nullptr;
     }
     
-    // Temporarily reset scale and reposition for rendering
     m_iconContainerNode->setScale(1.0f);
     m_iconContainerNode->setPosition({texWidth / 2.0f, texHeight / 2.0f});
     
-    // Render
+    float newPosX = origIconPos.x;
+    float newPosY = origIconPos.y;
+    
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        newPosY = newPosY - 6.f;
+    } else if (m_currentIconType == IconType::Ufo) {
+        newPosY = newPosY - 4.f;
+    }
+
+    CCPoint origCubePos;
+    if (m_cubePreview) {
+        origCubePos = m_cubePreview->getPosition();
+        float newCubePosX = origCubePos.x;
+        float newCubePosY = origCubePos.y;
+
+        if (m_currentIconType == IconType::Ufo) newCubePosY = newCubePosY - 4.f;
+        m_cubePreview->setPosition({newCubePosX, newCubePosY});
+    }
+    
+    m_previewPlayer->setPosition({newPosX, newPosY});
+    
     renderTex->beginWithClear(bgCol.r / 255.f, bgCol.g / 255.f, bgCol.b / 255.f, bgCol.a / 255.f);
     m_iconContainerNode->visit();
     renderTex->end();
     
-    // Restore original states
     m_iconContainerNode->setScale(origContainerScale);
     m_iconContainerNode->setPosition(origContainerPos);
-    
-    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
-            m_previewPlayer->m_robotSprite : nullptr;
-        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
-            m_previewPlayer->m_spiderSprite : nullptr;
-        
-        if (robotSprite && robotSprite->m_glowSprite) {
-            robotSprite->m_glowSprite->setVisible(origGlowVisible);
-        }
-        if (spiderSprite && spiderSprite->m_glowSprite) {
-            spiderSprite->m_glowSprite->setVisible(origGlowVisible);
-        }
-    } else {
-        if (m_previewPlayer->m_outlineSprite) {
-            m_previewPlayer->m_outlineSprite->setVisible(origGlowVisible);
-        }
-    }
+    m_previewPlayer->setPosition(origIconPos);
+    if (m_cubePreview) m_cubePreview->setPosition(origCubePos);
     
     CCImage* image = renderTex->newCCImage();
     return image;
@@ -1407,8 +1575,12 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
 }
 
 void IconOffsetEditorPopup::onOpenRendersFolder(CCObject* sender) {
-        geode::utils::file::openFolder(Mod::get()->getSettingValue<std::filesystem::path>("renders-path"));
-    }
+    geode::utils::file::openFolder(Mod::get()->getSettingValue<std::filesystem::path>("renders-path"));
+}
+
+void IconOffsetEditorPopup::onModSettings(CCObject* sender) {
+    geode::openSettingsPopup(Mod::get());
+}
 
 void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     if (!node) return;
@@ -1537,7 +1709,7 @@ class $modify(OffsetEditorGarageLayer, GJGarageLayer) {
         if (!GJGarageLayer::init()) return false;
         
         //auto editorSprite = CCSprite::createWithSpriteFrameName("GJ_editBtn_001.png");
-		auto editorSprite = CircleButtonSprite::create(CCSprite::create("offsetIndicatorBtn.png"_spr), CircleBaseColor::Green, CircleBaseSize::Medium);
+		auto editorSprite = CircleButtonSprite::create(CCSprite::create("offsetIndicatorBtn.png"_spr), CircleBaseColor::Green, CircleBaseSize::SmallAlt);
         auto editorButton = CCMenuItemSpriteExtra::create(
             editorSprite,
             this,

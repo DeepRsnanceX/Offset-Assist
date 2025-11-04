@@ -62,18 +62,22 @@ protected:
     
     std::vector<std::string> m_frameNames;
     std::string m_currentFrameName;
+
+    std::stringstream m_logStream;
     
     void updatePreviewPlayer();
     void onPartSelected(CCObject* sender);
     void onUpdateOffsets(CCObject* sender);
     void onToggleGlow(CCObject* sender);
     void onInfoButton(CCObject* sender);
+    void onWhy(CCObject* sender); // :sob:
     void onPlayAnimation(CCObject* sender);
     void onPlayBallRotation(CCObject* sender);
     void onStopBallRotation(CCObject* sender);
     void onRotationSpeedChanged(CCObject* sender);
     void onCubeOpacityChanged(CCObject* sender);
     void onRenderIcon(CCObject* sender);
+    void onModSettings(CCObject* sender);
     void updateInputFields();
     void drawHitbox();
     void onToggleHitbox(CCObject* sender);
@@ -83,6 +87,7 @@ protected:
     bool isUnsupportedIconType();
     void mapRobotSpiderSprites(CCNode* node);
     void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
+    void addToLog(const std::string& logMsg, int newLines);
     CCSprite* getCurrentSelectedSprite();
     CCImage* getIconImage();
     std::string getCurrentRealFrameName();

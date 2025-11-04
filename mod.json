@@ -9,9 +9,18 @@
 	"resources": {
 		"sprites": [
 			"resources/*.png"
+		],
+		"files": [
+			"resources/*.md"
 		]
 	},
 	"settings": {
+		"update-offsets-live": {
+			"type": "bool",
+			"name": "Update On Text Change",
+			"description": "Attempts to update the Sprite Offsets anytime the Text Inputs are changed. \nToggleable in case this causes instability issues for anyone.",
+			"default": true
+		},
 		"renders-path": {
 			"type": "folder",
 			"name": "Renders Folder",
@@ -27,7 +36,7 @@
 	},
 	"id": "saritahhh.offset_assist",
 	"name": "Icon Construct",
-	"version": "v1.0.0-beta.2",
+	"version": "v1.0.0",
 	"developer": "Saritahhh",
 	"description": "All-in-one Utils for Icon Creators!",
 	"links": {
