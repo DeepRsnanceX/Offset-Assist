@@ -298,10 +298,6 @@ bool IconOffsetEditorPopup::setup() {
     auto col2Label = CCLabelBMFont::create("Col 2", "bigFont.fnt");
     auto col3Label = CCLabelBMFont::create("Glow", "bigFont.fnt");
 
-    col1Label->setScale(0.3f);
-    col2Label->setScale(0.3f);
-    col3Label->setScale(0.3f);
-
     col1Label->setOpacity(160);
     col2Label->setOpacity(160);
     col3Label->setOpacity(160);
@@ -318,6 +314,9 @@ bool IconOffsetEditorPopup::setup() {
     colLabelsNode->addChild(col1Label);
     colLabelsNode->addChild(col2Label);
     colLabelsNode->addChild(col3Label);
+    col1Label->setScale(0.3f);
+    col2Label->setScale(0.3f);
+    col3Label->setScale(0.3f);
     colLabelsNode->updateLayout();
 
     this->m_mainLayer->addChild(colLabelsNode);
