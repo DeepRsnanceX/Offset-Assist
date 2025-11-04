@@ -174,6 +174,35 @@ bool IconOffsetEditorPopup::setup() {
     topRightMenu->updateLayout();
     topRightMenu->setPosition({size.width - 15.f, size.height - 8.f});
     this->m_mainLayer->addChild(topRightMenu);
+
+    // -----------------------
+    // LEFT SIDE MENU
+    // -----------------------
+    m_previewColor1 = manager->colorForIdx(manager->getPlayerColor());
+    m_previewColor2 = manager->colorForIdx(manager->getPlayerColor2());
+    m_previewGlowColor = manager->colorForIdx(manager->getPlayerGlowColor());
+
+    m_colorPickerMenu = CCMenu::create();
+
+    auto color1Btn = createColorPickerButton("color1", m_previewColor1);
+    auto color2Btn = createColorPickerButton("color2", m_previewColor2);
+    auto glowBtn = createColorPickerButton("glow", m_previewGlowColor);
+
+    m_colorPickerMenu->addChild(color1Btn);
+    m_colorPickerMenu->addChild(color2Btn);
+    m_colorPickerMenu->addChild(glowBtn);
+
+    m_colorPickerMenu->setLayout(
+        ColumnLayout::create()
+            ->setGap(4.0f)
+            ->setAxisAlignment(AxisAlignment::Center)
+            ->setAxisReverse(true)
+    );
+    m_colorPickerMenu->setAnchorPoint({0.5f, 0.5f});
+    m_colorPickerMenu->setContentSize({20.f, 70.f});
+    m_colorPickerMenu->updateLayout();
+    m_colorPickerMenu->setPosition({-20.f, midY});
+    this->m_mainLayer->addChild(m_colorPickerMenu);
     
     // -----------------------
     // DISABLE FOR VANILLA ICONS (L bozo sorry it's easier to work with MI)
@@ -921,6 +950,99 @@ void IconOffsetEditorPopup::onCubeOpacityChanged(CCObject* sender) {
     if (m_cubeOpacityLabel) m_cubeOpacityLabel->setString(fmt::format("{}%", static_cast<int>(opacity * 100)).c_str());
 }
 
+CCMenuItemSpriteExtra* IconOffsetEditorPopup::createColorPickerButton(const std::string& colorId, ccColor3B currentColor) {
+    auto colorSprite = CCSprite::createWithSpriteFrameName("GJ_colorBtn_001.png");
+    colorSprite->setColor(currentColor);
+    colorSprite->setScale(0.7f);
+    
+    auto button = CCMenuItemSpriteExtra::create(
+        colorSprite,
+        this,
+        menu_selector(IconOffsetEditorPopup::onColorPicker)
+    );
+    
+    button->setUserObject(CCString::create(colorId));
+    button->setID((colorId + "-btn").c_str());
+    
+    return button;
+}
+
+void IconOffsetEditorPopup::onColorPicker(CCObject* sender) {
+    auto menuItem = static_cast<CCMenuItemSpriteExtra*>(sender);
+    if (!menuItem) return;
+    
+    auto userObj = menuItem->getUserObject();
+    if (!userObj) return;
+    
+    auto colorIdStr = dynamic_cast<CCString*>(userObj);
+    if (!colorIdStr) return;
+    
+    m_currentColorSettingId = std::string(colorIdStr->getCString());
+    m_currentColorButtonSprite = dynamic_cast<CCSprite*>(menuItem->getNormalImage());
+    
+    ccColor3B currentColor;
+    if (m_currentColorSettingId == "color1") {
+        currentColor = m_previewColor1;
+    } else if (m_currentColorSettingId == "color2") {
+        currentColor = m_previewColor2;
+    } else if (m_currentColorSettingId == "glow") {
+        currentColor = m_previewGlowColor;
+    }
+    
+    auto colorPopup = geode::ColorPickPopup::create(currentColor);
+    colorPopup->setDelegate(this);
+    colorPopup->show();
+}
+
+void IconOffsetEditorPopup::updateColor(cocos2d::ccColor4B const& color) {
+    if (m_currentColorSettingId.empty()) return;
+    
+    ccColor3B color3B = {color.r, color.g, color.b};
+    
+    if (m_currentColorSettingId == "color1") {
+        m_previewColor1 = color3B;
+    } else if (m_currentColorSettingId == "color2") {
+        m_previewColor2 = color3B;
+    } else if (m_currentColorSettingId == "glow") {
+        m_previewGlowColor = color3B;
+    }
+    
+    if (m_currentColorButtonSprite) {
+        m_currentColorButtonSprite->setColor(color3B);
+    }
+    
+    applyPreviewColors();
+    
+    log::info("Updated {} to ({}, {}, {})", m_currentColorSettingId, color.r, color.g, color.b);
+}
+
+void IconOffsetEditorPopup::applyPreviewColors() {
+    if (!m_previewPlayer) return;
+    
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        auto robotSprite = (m_currentIconType == IconType::Robot) ? 
+            m_previewPlayer->m_robotSprite : nullptr;
+        auto spiderSprite = (m_currentIconType == IconType::Spider) ? 
+            m_previewPlayer->m_spiderSprite : nullptr;
+        
+        if (robotSprite) {
+            robotSprite->updateColor01(m_previewColor1);
+            robotSprite->updateColor02(m_previewColor2);
+            robotSprite->updateGlowColor(m_previewGlowColor, true);
+        }
+        if (spiderSprite) {
+            spiderSprite->updateColor01(m_previewColor1);
+            spiderSprite->updateColor02(m_previewColor2);
+            spiderSprite->updateGlowColor(m_previewGlowColor, true);
+        }
+    } else {
+        m_previewPlayer->setColor(m_previewColor1);
+        m_previewPlayer->setSecondColor(m_previewColor2);
+        m_previewPlayer->setGlowOutline(m_previewGlowColor);
+        m_previewPlayer->enableCustomGlowColor(m_previewGlowColor);
+    }
+}
+
 void IconOffsetEditorPopup::highlightSelectedButton() {
     bool isRobotOrSpider = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider);
     
@@ -1034,6 +1156,7 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         return;
     }
     
+    std::string backupPath = plistPath + ".bak";
     auto readResult = utils::file::readString(plistPath);
     if (!readResult) {
         FLAlertLayer::create("Error", 
@@ -1043,6 +1166,14 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     }
     
     std::string plistContent = readResult.unwrap();
+    
+    auto backupResult = utils::file::writeString(backupPath, plistContent);
+    if (!backupResult) {
+        log::warn("failed to create backup file: {}", backupPath);
+    } else {
+        log::info("created plist backup at: {}", backupPath);
+    }
+    
     int updatedCount = 0;
     
     log::info("=== Starting plist save process ===");
@@ -1133,7 +1264,7 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     
     FLAlertLayer::create(
         "Success!",
-        fmt::format("Updated plist file with {} changes!\nPath: <cy>{}</c>", updatedCount, plistPath),
+        fmt::format("Updated plist file with {} changes!\nSaved backup as: <cy>{}</c>\nPath: <cy>{}</c>", updatedCount, backupPath, plistPath),
         "OK"
     )->show();
     log::info("Successfully edited plist at '{}', with {} changes", plistPath, updatedCount);
@@ -1147,6 +1278,7 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
         return nullptr;
     }
     
+    // Store original states
     auto origIconPos = m_previewPlayer->getPosition();
     auto origContainerScale = m_iconContainerNode->getScale();
     auto origContainerPos = m_iconContainerNode->getPosition();
@@ -1175,15 +1307,11 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
     
     auto bgCol = Mod::get()->getSettingValue<ccColor4B>("bg-color");
     
+    // Use the container size directly - it's already set up correctly
     auto canvasSize = m_iconContainerNode->getContentSize();
     
-    int extraW = (m_currentIconType == IconType::Ship) ? 6 : 0;
-    int extraH = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 8 : 0;
-    
-    int glowMargin = GameManager::sharedState()->getPlayerGlow() ? 6 : 0;
-    
-    int texWidth = static_cast<int>(canvasSize.width * origContainerScale) + extraW + glowMargin;
-    int texHeight = static_cast<int>(canvasSize.height * origContainerScale) + extraH + glowMargin;
+    int texWidth = static_cast<int>(canvasSize.width);
+    int texHeight = static_cast<int>(canvasSize.height);
     
     log::info("Creating render texture: {}x{}", texWidth, texHeight);
     
@@ -1193,42 +1321,18 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
         return nullptr;
     }
     
+    // Temporarily reset scale and reposition for rendering
     m_iconContainerNode->setScale(1.0f);
     m_iconContainerNode->setPosition({texWidth / 2.0f, texHeight / 2.0f});
     
-    auto midContainerX = canvasSize.width / 2.f;
-    auto midContainerY = canvasSize.height / 2.f;
-    
-    if (m_currentIconType == IconType::Ship) {
-        m_previewPlayer->setPosition({midContainerX, midContainerY});
-        if (m_cubePreview) {
-            m_cubePreview->setPosition({midContainerX, midContainerY + 10.f});
-        }
-    } else if (m_currentIconType == IconType::Robot) {
-        m_previewPlayer->setPosition({midContainerX, midContainerY - 4.f});
-    } else if (m_currentIconType == IconType::Spider) {
-        m_previewPlayer->setPosition({midContainerX, midContainerY - 3.f});
-    } else if (m_currentIconType == IconType::Ufo) {
-        m_previewPlayer->setPosition({midContainerX, midContainerY - 3.f});
-        if (m_cubePreview) {
-            m_cubePreview->setPosition({midContainerX, midContainerY + 9.f});
-        }
-    } else if (m_currentIconType == IconType::Jetpack) {
-        m_previewPlayer->setPosition({midContainerX, midContainerY});
-        if (m_cubePreview) {
-            m_cubePreview->setPosition({midContainerX + 12.f, midContainerY + 8.f});
-        }
-    } else {
-        m_previewPlayer->setPosition({midContainerX, midContainerY});
-    }
-    
+    // Render
     renderTex->beginWithClear(bgCol.r / 255.f, bgCol.g / 255.f, bgCol.b / 255.f, bgCol.a / 255.f);
     m_iconContainerNode->visit();
     renderTex->end();
     
+    // Restore original states
     m_iconContainerNode->setScale(origContainerScale);
     m_iconContainerNode->setPosition(origContainerPos);
-    m_previewPlayer->setPosition(origIconPos);
     
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
         auto robotSprite = (m_currentIconType == IconType::Robot) ? 
@@ -1245,19 +1349,6 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
     } else {
         if (m_previewPlayer->m_outlineSprite) {
             m_previewPlayer->m_outlineSprite->setVisible(origGlowVisible);
-        }
-    }
-    
-    if (m_cubePreview) {
-        auto midContainerX = canvasSize.width / 2.f;
-        auto midContainerY = canvasSize.height / 2.f;
-        
-        if (m_currentIconType == IconType::Ship) {
-            m_cubePreview->setPosition({midContainerX, midContainerY + 5.f});
-        } else if (m_currentIconType == IconType::Ufo) {
-            m_cubePreview->setPosition({midContainerX, midContainerY + 6.f});
-        } else if (m_currentIconType == IconType::Jetpack) {
-            m_cubePreview->setPosition({midContainerX + 6.f, midContainerY + 4.f});
         }
     }
     

@@ -19,7 +19,7 @@ struct FrameOffsetData {
     CCPoint offset;
 };
 
-class IconOffsetEditorPopup : public Popup<> {
+class IconOffsetEditorPopup : public Popup<>, public geode::ColorPickPopupDelegate {
 protected:
     bool setup() override;
     
@@ -32,6 +32,13 @@ protected:
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
+
+    CCMenu* m_colorPickerMenu = nullptr;
+    std::string m_currentColorSettingId;
+    CCSprite* m_currentColorButtonSprite = nullptr;
+    ccColor3B m_previewColor1;
+    ccColor3B m_previewColor2;
+    ccColor3B m_previewGlowColor;
 
     CCMenuItemSpriteExtra* m_glowToggler = nullptr;
     CCLabelBMFont* m_rotationSpeedLabel = nullptr;
@@ -79,6 +86,11 @@ protected:
     CCSprite* getCurrentSelectedSprite();
     CCImage* getIconImage();
     std::string getCurrentRealFrameName();
+
+    void onColorPicker(CCObject* sender);
+    void updateColor(cocos2d::ccColor4B const& color) override;
+    void applyPreviewColors();
+    CCMenuItemSpriteExtra* createColorPickerButton(const std::string& colorId, ccColor3B currentColor);
     
 public:
     static IconOffsetEditorPopup* create();
