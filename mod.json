@@ -11,6 +11,20 @@
 			"resources/*.png"
 		]
 	},
+	"settings": {
+		"renders-path": {
+			"type": "folder",
+			"name": "Renders Folder",
+			"description": "Where to save the Icon Renders to. Defaults to this mod's config directory.",
+			"default": "{mod_config_dir}/renders"
+		},
+		"bg-color": {
+			"type": "rgba",
+			"name": "Render Background Color",
+			"description": "Defines the BG color to use for the renders. Defaults to transparent (which is best, honestly)",
+			"default": [0, 0, 0, 0]
+		}
+	},
 	"id": "saritahhh.offset_assist",
 	"name": "Icon Construct",
 	"version": "v1.0.0-beta.2",

@@ -12,6 +12,14 @@
 // use ai as a TOOL ppl
 // not to make ur entire fucking job
 
+std::string getCurrentTimeString() {
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
+    return ss.str();
+}
+
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
     auto manager = GameManager::sharedState();
 	int typeAsInt = static_cast<int>(iconType);
@@ -115,6 +123,7 @@ bool IconOffsetEditorPopup::setup() {
     auto size = this->m_mainLayer->getContentSize();
     auto popupSize = this->getContentSize();
     bool isRobotOrSpider = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider);
+    bool isRiderMode = (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack);
 
     const float midX = size.width / 2.f;
     const float midY = size.height / 2.f;
@@ -124,9 +133,9 @@ bool IconOffsetEditorPopup::setup() {
     const float lowerMenuBaseY = midY - 52.5f;
 
     // -----------------------
-    // INFO BUTTON
+    // TOP RIGHT BUTTON MENU
     // -----------------------
-    auto infoSpr = CCSprite::createWithSpriteFrameName("GJ_infoIcon_001.png");
+    auto infoSpr = CircleButtonSprite::create(CCSprite::create("helpIcon.png"_spr), CircleBaseColor::Cyan, CircleBaseSize::Small);
     infoSpr->setScale(0.8f);
     auto infoBtn = CCMenuItemSpriteExtra::create(
         infoSpr,
@@ -134,10 +143,36 @@ bool IconOffsetEditorPopup::setup() {
         menu_selector(IconOffsetEditorPopup::onInfoButton)
     );
 
-    auto infoBtnMenu = CCMenu::create();
-    infoBtnMenu->addChild(infoBtn);
-    infoBtnMenu->setPosition({size.width - 15.f, size.height - 15.f});
-    this->m_mainLayer->addChild(infoBtnMenu);
+    auto renderSpr = CircleButtonSprite::create(CCSprite::create("renderIcon.png"_spr), CircleBaseColor::Green, CircleBaseSize::Small);
+    renderSpr->setScale(0.8f);
+    auto renderBtn = CCMenuItemSpriteExtra::create(
+        renderSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onRenderIcon)
+    );
+
+    auto openFolderSpr = CircleButtonSprite::create(CCSprite::createWithSpriteFrameName("folderIcon_001.png"), CircleBaseColor::Green, CircleBaseSize::Small);
+    openFolderSpr->setScale(0.8f);
+    auto openFolderBtn = CCMenuItemSpriteExtra::create(
+        openFolderSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onOpenRendersFolder)
+    );
+
+    auto topRightMenu = CCMenu::create();
+    topRightMenu->addChild(infoBtn);
+    topRightMenu->addChild(openFolderBtn);
+    topRightMenu->addChild(renderBtn);
+    topRightMenu->setLayout(
+        ColumnLayout::create()
+            ->setGap(3.0f)
+            ->setAxisAlignment(AxisAlignment::End)
+            ->setAxisReverse(true)
+    );
+    topRightMenu->setAnchorPoint({0.5f, 1.f});
+    topRightMenu->setContentSize({20.f, 60.f});
+    topRightMenu->setPosition({size.width - 15.f, size.height - 8.f});
+    this->m_mainLayer->addChild(topRightMenu);
     
     // -----------------------
     // DISABLE FOR VANILLA ICONS (L bozo sorry it's easier to work with MI)
@@ -157,15 +192,74 @@ bool IconOffsetEditorPopup::setup() {
     m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
     
     // -----------------------
-    // SETUP SIMPLEPLAYER
+    // SETUP ICON CONTAINER NODE
     // -----------------------
+    m_iconContainerNode = CCNode::create();
+    m_iconContainerNode->setContentSize({50.f, 50.f});
+    m_iconContainerNode->setAnchorPoint({0.5f, 0.5f});
+    m_iconContainerNode->setPosition({midX + 75.f, midY});
+    m_iconContainerNode->setScale(2.f);
+    m_iconContainerNode->setZOrder(2);
+
+    auto midContainerX = m_iconContainerNode->getContentSize().width / 2.f;
+    auto midContainerY = m_iconContainerNode->getContentSize().height / 2.f;
     m_previewPlayer = SimplePlayer::create(0);
-    m_previewPlayer->setPosition({midX + 75.0f, midY});
-    m_previewPlayer->setScale(2.f);
     m_previewPlayer->setZOrder(2);
+    if (m_currentIconType == IconType::Ship) {
+        m_previewPlayer->setPosition({midContainerX, midContainerY - 5.f});
+    } else {
+        m_previewPlayer->setPosition({midContainerX, midContainerY});
+    }
     updatePreviewPlayer();
     
-    this->m_mainLayer->addChild(m_previewPlayer);
+    m_iconContainerNode->addChild(m_previewPlayer);
+    this->m_mainLayer->addChild(m_iconContainerNode);
+
+    // -----------------------
+    // CUBE PREVIEW FOR RIDER GAMEMODES
+    // -----------------------
+    if (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack) {        
+        m_cubePreview = CCSprite::create("exampleCube.png"_spr);
+        
+        // welcome back icon preview
+        if (m_currentIconType == IconType::Ship) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 5.f});
+            m_cubePreview->setScale(0.55f);
+        } else if (m_currentIconType == IconType::Ufo) {
+            m_cubePreview->setPosition({midContainerX, midContainerY + 6.f});
+            m_cubePreview->setScale(0.55f);
+        } else if (m_currentIconType == IconType::Jetpack) {
+            m_cubePreview->setPosition({midContainerX + 6.f, midContainerY + 4.f});
+            m_cubePreview->setScale(0.6f);
+        }
+        
+        m_iconContainerNode->addChild(m_cubePreview);
+        
+        // cube opacity slider
+        auto opacityLabel = CCLabelBMFont::create("Cube Opacity:", "goldFont.fnt");
+        opacityLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
+        opacityLabel->setScale(0.35f);
+        this->m_mainLayer->addChild(opacityLabel);
+        
+        m_cubeOpacitySlider = Slider::create(
+            this,
+            menu_selector(IconOffsetEditorPopup::onCubeOpacityChanged),
+            0.6f
+        );
+        m_cubeOpacitySlider->setValue(1.0f);
+        m_cubeOpacitySlider->m_sliderBar->setContentSize({60.f, m_cubeOpacitySlider->m_sliderBar->getContentSize().height});
+        
+        auto opacityMenu = CCMenu::create();
+        opacityMenu->addChild(m_cubeOpacitySlider);
+        opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        this->m_mainLayer->addChild(opacityMenu);
+        
+        m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
+        m_cubeOpacityLabel->setPosition({lowerMenuX, lowerMenuBaseY - 10.f});
+        m_cubeOpacityLabel->setScale(0.25f);
+        m_cubeOpacityLabel->setOpacity(150);
+        this->m_mainLayer->addChild(m_cubeOpacityLabel);
+    }
 
     // -----------------------
     // PREVIEW CONTROLS MENU (Glow + Hitbox)
@@ -348,61 +442,6 @@ bool IconOffsetEditorPopup::setup() {
         m_rotationSpeedLabel->setPosition({lowerMenuX + 50.f, lowerMenuBaseY + 15.f});
         m_rotationSpeedLabel->setScale(0.3f);
         this->m_mainLayer->addChild(m_rotationSpeedLabel);
-    }
-
-    // -----------------------
-    // CUBE PREVIEW FOR RIDER GAMEMODES
-    // -----------------------
-    if (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack) {        
-        m_cubePreview = CCSprite::create("exampleCube.png"_spr);
-        
-        // welcome back icon preview
-        if (m_currentIconType == IconType::Ship) {
-            m_cubePreview->setPosition({
-                m_previewPlayer->getPositionX(),
-                m_previewPlayer->getPositionY() + 20.f
-            });
-            m_cubePreview->setScale(1.1f);
-        } else if (m_currentIconType == IconType::Ufo) {
-            m_cubePreview->setPosition({
-                m_previewPlayer->getPositionX(),
-                m_previewPlayer->getPositionY() + 12.f
-            });
-            m_cubePreview->setScale(1.1f);
-        } else if (m_currentIconType == IconType::Jetpack) {
-            m_cubePreview->setPosition({
-                m_previewPlayer->getPositionX() + 12.f,
-                m_previewPlayer->getPositionY() + 8.f
-            });
-            m_cubePreview->setScale(1.2f);
-        }
-        
-        this->m_mainLayer->addChild(m_cubePreview);
-        
-        // cube opacity slider
-        auto opacityLabel = CCLabelBMFont::create("Cube Opacity:", "goldFont.fnt");
-        opacityLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
-        opacityLabel->setScale(0.35f);
-        this->m_mainLayer->addChild(opacityLabel);
-        
-        m_cubeOpacitySlider = Slider::create(
-            this,
-            menu_selector(IconOffsetEditorPopup::onCubeOpacityChanged),
-            0.6f
-        );
-        m_cubeOpacitySlider->setValue(1.0f);
-        m_cubeOpacitySlider->m_sliderBar->setContentSize({60.f, m_cubeOpacitySlider->m_sliderBar->getContentSize().height});
-        
-        auto opacityMenu = CCMenu::create();
-        opacityMenu->addChild(m_cubeOpacitySlider);
-        opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
-        this->m_mainLayer->addChild(opacityMenu);
-        
-        m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
-        m_cubeOpacityLabel->setPosition({lowerMenuX, lowerMenuBaseY - 10.f});
-        m_cubeOpacityLabel->setScale(0.25f);
-        m_cubeOpacityLabel->setOpacity(150);
-        this->m_mainLayer->addChild(m_cubeOpacityLabel);
     }
 
     // -----------------------
@@ -798,7 +837,8 @@ void IconOffsetEditorPopup::drawHitbox() {
     
     auto hitboxSize = getHitboxSizeForIconType(m_currentIconType);
     
-    auto playerPos = m_previewPlayer->getPosition();
+    //auto playerPos = m_previewPlayer->getPosition();
+    auto playerPos = m_iconContainerNode->getPosition();
     
     CCRect hitboxRect = {
         playerPos.x - hitboxSize.width / 2.f,
@@ -1100,6 +1140,74 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     
     m_modifiedOffsets.clear();
 }
+
+CCImage* IconOffsetEditorPopup::getIconImage() {
+    auto origIconPos = m_previewPlayer->getPosition();
+    auto bgCol = Mod::get()->getSettingValue<ccColor4B>("bg-color");
+    auto canvasSize = m_iconContainerNode->getContentSize();
+    
+    int extraW = (m_currentIconType == IconType::Ship) ? 6 : 0;
+    int extraH = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 8 : 0;
+    int texWidth = static_cast<int>(canvasSize.width) + extraW;
+    int texHeight = static_cast<int>(canvasSize.height) + extraH;
+
+    auto renderTex = CCRenderTexture::create(texWidth, texHeight, kCCTexture2DPixelFormat_RGBA8888);
+    if (!renderTex) return nullptr;
+
+    float newPosX = origIconPos.x;
+    float newPosY = origIconPos.y;
+
+    if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
+        newPosY = newPosY - 4.f;
+    } else if (m_currentIconType == IconType::Ufo) {
+        newPosY = newPosY - 3.f;
+    }
+
+    m_previewPlayer->setPosition({newPosX, newPosY});
+
+    renderTex->beginWithClear(bgCol.r / 255.f, bgCol.g / 255.f, bgCol.b / 255.f, bgCol.a / 255.f);
+    m_iconContainerNode->visit();
+    renderTex->end();
+
+    m_previewPlayer->setPosition({origIconPos.x, origIconPos.y});
+
+    CCImage* image = renderTex->newCCImage();
+
+    return image;
+}
+
+void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
+
+    auto renderPath = Mod::get()->getSettingValue<std::filesystem::path>("renders-path");
+    IconInfo* renderInfo = MoreIcons::getIcon(m_currentIconType);
+    std::string timeString = getCurrentTimeString();
+    std::string renderFilename = fmt::format("{}-{}", renderInfo->shortName, timeString);
+
+    auto finalPath = renderPath / renderFilename;
+
+    CCImage* render = getIconImage();
+
+    if (render->saveToFile(finalPath.string().c_str(), false)) {
+        FLAlertLayer::create(
+            "Rendered",
+            "Icon rendered successfully!",
+            ":D"
+        )->show();
+
+        log::info("rendered icon {} to {}", renderInfo->shortName, finalPath);
+    } else {
+        FLAlertLayer::create(
+            "Error...",
+            "Icon failed to render.",
+            ":("
+        )->show();
+    }
+
+}
+
+void IconOffsetEditorPopup::onOpenRendersFolder(CCObject* sender) {
+        geode::utils::file::openFolder(Mod::get()->getSettingValue<std::filesystem::path>("renders-path"));
+    }
 
 void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     if (!node) return;

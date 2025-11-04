@@ -24,17 +24,17 @@ protected:
     bool setup() override;
     
     SimplePlayer* m_previewPlayer = nullptr;
+    CCNode* m_iconContainerNode = nullptr;
+    CCSprite* m_cubePreview = nullptr;
     geode::TextInput* m_inputX = nullptr;
     geode::TextInput* m_inputY = nullptr;
     CCLabelBMFont* m_labelX = nullptr;
     CCLabelBMFont* m_labelY = nullptr;
     CCMenu* m_partSelectMenu = nullptr;
     CCMenuItemSpriteExtra* m_updateButton = nullptr;
-    CCLabelBMFont* m_frameNameLabel = nullptr;
 
     CCMenuItemSpriteExtra* m_glowToggler = nullptr;
     CCLabelBMFont* m_rotationSpeedLabel = nullptr;
-    CCSprite* m_cubePreview = nullptr;
     Slider* m_cubeOpacitySlider = nullptr;
     CCLabelBMFont* m_cubeOpacityLabel = nullptr;
     CCMenu* m_animButtonsMenu = nullptr;
@@ -66,15 +66,18 @@ protected:
     void onStopBallRotation(CCObject* sender);
     void onRotationSpeedChanged(CCObject* sender);
     void onCubeOpacityChanged(CCObject* sender);
+    void onRenderIcon(CCObject* sender);
     void updateInputFields();
     void drawHitbox();
     void onToggleHitbox(CCObject* sender);
     void onSavePlist(CCObject* sender);
+    void onOpenRendersFolder(CCObject* sender);
     void highlightSelectedButton();
     bool isUnsupportedIconType();
     void mapRobotSpiderSprites(CCNode* node);
     void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
     CCSprite* getCurrentSelectedSprite();
+    CCImage* getIconImage();
     std::string getCurrentRealFrameName();
     
 public:
