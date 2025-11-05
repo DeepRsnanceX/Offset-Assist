@@ -1930,11 +1930,9 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     
     auto children = node->getChildren();
     if (children && children->count() > 0) {
-        CCObject* child;
-        CCARRAY_FOREACH(children, child) {
-            if (auto childNode = dynamic_cast<CCNode*>(child)) {
-                mapRobotSpiderSprites(childNode);
-            }
+        CCArrayExt<CCNode*> extChildren(children);
+        for (auto* childNode : extChildren) {
+            mapRobotSpiderSprites(childNode);
         }
     }
     
