@@ -1962,7 +1962,6 @@ void IconOffsetEditorPopup::applyOffsetToAllMatchingSprites(CCNode* node, const 
 
 void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
     AddValuePopup::create([this](float value) {
-        // Get current X value
         float currentX = 0.0f;
         try {
             std::string xStr = m_inputX->getString();
@@ -1973,13 +1972,10 @@ void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
             currentX = 0.0f;
         }
         
-        // Add the value
         float newX = currentX + value;
         
-        // Update input field
         m_inputX->setString(fmt::format("{:.1f}", newX));
         
-        // Trigger the update (simulate clicking the Update button)
         onUpdateOffsets(nullptr);
         
         log::info("Added {} to X offset (was {}, now {})", value, currentX, newX);
@@ -1988,7 +1984,6 @@ void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
 
 void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
     AddValuePopup::create([this](float value) {
-        // Get current Y value
         float currentY = 0.0f;
         try {
             std::string yStr = m_inputY->getString();
@@ -1999,13 +1994,10 @@ void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
             currentY = 0.0f;
         }
         
-        // Add the value
         float newY = currentY + value;
         
-        // Update input field
         m_inputY->setString(fmt::format("{:.1f}", newY));
         
-        // Trigger the update (simulate clicking the Update button)
         onUpdateOffsets(nullptr);
         
         log::info("Added {} to Y offset (was {}, now {})", value, currentY, newY);
