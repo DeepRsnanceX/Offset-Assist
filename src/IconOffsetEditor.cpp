@@ -141,17 +141,107 @@ std::string getRealFrameName(const std::string& fullFrameName) {
     std::string result = fullFrameName;
     
     const std::string moreIconsPrefix = "hiimjustin000.more_icons/";
-    if (utils::string::startsWith(result, moreIconsPrefix)) {
-        result = result.substr(moreIconsPrefix.length());
-    }
+    if (utils::string::startsWith(result, moreIconsPrefix)) result = result.substr(moreIconsPrefix.length());
     
     size_t colonPos = result.find(':');
-    if (colonPos != std::string::npos) {
-        result = result.substr(colonPos + 1);
-    }
+    if (colonPos != std::string::npos) result = result.substr(colonPos + 1);
     
     return result;
 }
+
+class AddValuePopup : public geode::Popup<std::function<void(float)>> {
+protected:
+    geode::TextInput* m_valueInput = nullptr;
+    std::function<void(float)> m_callback;
+    bool m_isXAxis = true;
+    
+    bool setup(std::function<void(float)> callback) override {
+        m_callback = callback;
+        
+        auto winSize = this->m_mainLayer->getContentSize();
+        
+        this->setTitle(m_isXAxis ? "Add to Offset X" : "Add to Offset Y");
+        
+        // info
+        auto infoLabel = CCLabelBMFont::create(
+            "Enter a value to add to the current offset.\nPositive numbers move right/up.\nNegative numbers move left/down.",
+            "chatFont.fnt"
+        );
+        infoLabel->setPosition({winSize.width / 2.0f, winSize.height / 2.0f + 23.0f});
+        infoLabel->setScale(0.4f);
+        infoLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
+        this->m_mainLayer->addChild(infoLabel);
+        
+        // input
+        m_valueInput = geode::TextInput::create(120.0f, "0.0", "bigFont.fnt");
+        m_valueInput->setPosition({winSize.width / 2.0f, winSize.height / 2.0f - 10.0f});
+        m_valueInput->setScale(0.8f);
+        m_valueInput->setFilter("0123456789.-");
+        this->m_mainLayer->addChild(m_valueInput);
+        
+        // buttons
+        auto addBtnSpr = ButtonSprite::create("Add", "goldFont.fnt", "GJ_button_01.png", 0.8f);
+        auto addBtn = CCMenuItemSpriteExtra::create(
+            addBtnSpr,
+            this,
+            menu_selector(AddValuePopup::onAdd)
+        );
+        
+        auto cancelBtnSpr = ButtonSprite::create("Cancel", "goldFont.fnt", "GJ_button_06.png", 0.8f);
+        auto cancelBtn = CCMenuItemSpriteExtra::create(
+            cancelBtnSpr,
+            this,
+            menu_selector(AddValuePopup::onClose)
+        );
+        
+        // menu
+        auto buttonMenu = CCMenu::create();
+        buttonMenu->addChild(addBtn);
+        buttonMenu->addChild(cancelBtn);
+        buttonMenu->setLayout(
+            RowLayout::create()
+                ->setGap(8.0f)
+                ->setAxisAlignment(AxisAlignment::Center)
+        );
+        buttonMenu->setPosition({winSize.width / 2.0f, winSize.height / 2.0f - 45.0f});
+        buttonMenu->setContentSize({150.0f, 30.0f});
+        buttonMenu->updateLayout();
+        this->m_mainLayer->addChild(buttonMenu);
+        
+        return true;
+    }
+    
+    void onAdd(CCObject* sender) {
+        std::string valueStr = m_valueInput->getString();
+
+        if (valueStr.empty()) {
+            FLAlertLayer::create("Error", "Please enter a value!", "OK")->show();
+            return;
+        }
+
+        try {
+            float value = std::stof(valueStr);
+
+            if (m_callback) m_callback(value);
+            this->onClose(nullptr);
+
+        } catch (const std::exception& e) {
+            FLAlertLayer::create("Error", "Invalid number!", "OK")->show();
+        }
+    }
+    
+public:
+    static AddValuePopup* create(std::function<void(float)> callback, bool isXAxis) {
+        auto ret = new AddValuePopup();
+        ret->m_isXAxis = isXAxis;
+        if (ret->initAnchored(240.0f, 140.0f, callback)) {
+            ret->autorelease();
+            return ret;
+        }
+        delete ret;
+        return nullptr;
+    }
+};
 
 IconOffsetEditorPopup* IconOffsetEditorPopup::create() {
     auto ret = new IconOffsetEditorPopup();
@@ -209,9 +299,11 @@ bool IconOffsetEditorPopup::setup() {
         return true;
     }
 
-	m_iconNameLabel = CCLabelBMFont::create(icInfo->shortName.c_str(), "chatFont.fnt");
-	m_iconNameLabel->setPosition({lowerMenuX, midY + 50.f});
-	m_iconNameLabel->setScale(0.8f);
+
+	m_iconNameLabel = CCLabelBMFont::create(fmt::format("Editing: {}", icInfo->shortName).c_str(), "chatFont.fnt");
+	m_iconNameLabel->setPosition({midX, size.height - 35.f});
+	m_iconNameLabel->setScale(0.5f);
+    m_iconNameLabel->setOpacity(135);
 	this->m_mainLayer->addChild(m_iconNameLabel);
 
     // -----------------------
@@ -601,7 +693,7 @@ bool IconOffsetEditorPopup::setup() {
     m_labelX->setScale(0.4f);
     m_labelX->setAnchorPoint({0.0f, 0.5f});
     this->m_mainLayer->addChild(m_labelX);
-    
+
     m_inputX = geode::TextInput::create(80.0f, "0.0", "bigFont.fnt");
     m_inputX->setPosition({inputX + 20.0f, inputYTop});
     m_inputX->setScale(0.7f);
@@ -612,14 +704,28 @@ bool IconOffsetEditorPopup::setup() {
             this->onUpdateOffsets(nullptr);
         });
     }
-    
+
+    // add to x offset btn
+    auto addXSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
+    addXSpr->setScale(0.5f);
+    auto addXBtn = CCMenuItemSpriteExtra::create(
+        addXSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onAddToOffsetX)
+    );
+
+    auto addXMenu = CCMenu::create();
+    addXMenu->addChild(addXBtn);
+    addXMenu->setPosition({inputX + 55.0f, inputYTop});
+    this->m_mainLayer->addChild(addXMenu);
+
     // y offset
     m_labelY = CCLabelBMFont::create("Offset Y:", "bigFont.fnt");
     m_labelY->setPosition({inputX - 80.0f, inputYTop - 40.0f});
     m_labelY->setScale(0.4f);
     m_labelY->setAnchorPoint({0.0f, 0.5f});
     this->m_mainLayer->addChild(m_labelY);
-    
+
     m_inputY = geode::TextInput::create(80.0f, "0.0", "bigFont.fnt");
     m_inputY->setPosition({inputX + 20.0f, inputYTop - 40.0f});
     m_inputY->setScale(0.7f);
@@ -630,6 +736,20 @@ bool IconOffsetEditorPopup::setup() {
             this->onUpdateOffsets(nullptr);
         });
     }
+
+    // add to y offset btn
+    auto addYSpr = CCSprite::createWithSpriteFrameName("GJ_plus3Btn_001.png");
+    addYSpr->setScale(0.5f);
+    auto addYBtn = CCMenuItemSpriteExtra::create(
+        addYSpr,
+        this,
+        menu_selector(IconOffsetEditorPopup::onAddToOffsetY)
+    );
+
+    auto addYMenu = CCMenu::create();
+    addYMenu->addChild(addYBtn);
+    addYMenu->setPosition({inputX + 55.0f, inputYTop - 40.0f});
+    this->m_mainLayer->addChild(addYMenu);
     
     // action buttons hi
     auto updateBtnSpr = ButtonSprite::create("Update", "goldFont.fnt", "GJ_button_01.png", 0.7f);
@@ -1842,8 +1962,56 @@ void IconOffsetEditorPopup::applyOffsetToAllMatchingSprites(CCNode* node, const 
     }
 }
 
-bool IconOffsetEditorPopup::isUnsupportedIconType() {
-    return false;
+void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
+    AddValuePopup::create([this](float value) {
+        // Get current X value
+        float currentX = 0.0f;
+        try {
+            std::string xStr = m_inputX->getString();
+            if (!xStr.empty()) {
+                currentX = std::stof(xStr);
+            }
+        } catch (const std::exception& e) {
+            currentX = 0.0f;
+        }
+        
+        // Add the value
+        float newX = currentX + value;
+        
+        // Update input field
+        m_inputX->setString(fmt::format("{:.1f}", newX));
+        
+        // Trigger the update (simulate clicking the Update button)
+        onUpdateOffsets(nullptr);
+        
+        log::info("Added {} to X offset (was {}, now {})", value, currentX, newX);
+    }, true)->show();
+}
+
+void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
+    AddValuePopup::create([this](float value) {
+        // Get current Y value
+        float currentY = 0.0f;
+        try {
+            std::string yStr = m_inputY->getString();
+            if (!yStr.empty()) {
+                currentY = std::stof(yStr);
+            }
+        } catch (const std::exception& e) {
+            currentY = 0.0f;
+        }
+        
+        // Add the value
+        float newY = currentY + value;
+        
+        // Update input field
+        m_inputY->setString(fmt::format("{:.1f}", newY));
+        
+        // Trigger the update (simulate clicking the Update button)
+        onUpdateOffsets(nullptr);
+        
+        log::info("Added {} to Y offset (was {}, now {})", value, currentY, newY);
+    }, false)->show();
 }
 
 class $modify(OffsetEditorGarageLayer, GJGarageLayer) {

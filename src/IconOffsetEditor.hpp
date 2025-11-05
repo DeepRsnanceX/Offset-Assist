@@ -19,6 +19,8 @@ struct FrameOffsetData {
     CCPoint offset;
 };
 
+class AddValuePopup;
+
 class IconOffsetEditorPopup : public Popup<>, public geode::ColorPickPopupDelegate {
 protected:
     bool setup() override;
@@ -85,7 +87,6 @@ protected:
     void onSavePlist(CCObject* sender);
     void onOpenRendersFolder(CCObject* sender);
     void highlightSelectedButton();
-    bool isUnsupportedIconType();
     void mapRobotSpiderSprites(CCNode* node);
     void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
     void addToLog(const std::string& logMsg, int newLines);
@@ -93,6 +94,9 @@ protected:
     CCSprite* getCurrentSelectedSprite();
     CCImage* getIconImage();
     std::string getCurrentRealFrameName();
+
+    void onAddToOffsetX(CCObject* sender);
+    void onAddToOffsetY(CCObject* sender);
 
     void onColorPicker(CCObject* sender);
     void updateColor(cocos2d::ccColor4B const& color) override;
