@@ -1268,36 +1268,44 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
 }
 
 void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
+    processPlistSave(false);
+}
+
+void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
     bool backupWasMade;
 
     if (m_modifiedOffsets.empty()) {
-        FLAlertLayer::create("No Changes", "You haven't changed any offsets yet! There's nothing to modify in your plist.", "OK")->show();
+        FLAlertLayer::create("No Changes", "<cr>You haven't changed any offsets yet!</c> There's nothing to modify in your plist.\nMake some changes before applying!", "OK")->show();
         return;
     }
 
     auto icInfo = MoreIcons::getIcon(m_currentIconType);
     if (!icInfo) {
-        FLAlertLayer::create("Error", "Couldn't get icon info!", "OK")->show();
+        FLAlertLayer::create("Error", "<cr>Couldn't get icon info!</c>", "OK")->show();
         return;
     }
 
     std::string plistPath = icInfo->sheetName;
 
     if (plistPath.empty()) {
-        FLAlertLayer::create("Error", "Couldn't get the icon's plist!\nPlease make sure your Texture Pack path is valid, and you're not trying to edit a zipped texture pack.", "OK")->show();
+        FLAlertLayer::create("Error", "<cr>Couldn't get the icon's plist!</c>\nPlease make sure your Texture Pack path is valid, and you're not trying to edit a zipped texture pack.", "OK")->show();
         return;
     }
 
     m_logStream.str("");
-    addToLog("## Plist Save Process", 0);
+    addToLog("## Plist Editing Process", 0);
+    
+    if (remapNames) {
+        addToLog("<cy>**Note:** Using frame name remapping workaround.</c>", 2);
+    }
 
     std::string backupPath = plistPath + ".bak";
     auto readResult = utils::file::readString(plistPath);
     if (!readResult) {
-        std::string errorMsg = fmt::format("**<cr>Error:</c>** couldn't read contents of plist file.\n\n**Error Details:**\n```\n{}\n```", readResult.unwrapErr());
+        std::string errorMsg = fmt::format("**<cr>Error:</c>** Couldn't read contents of plist file.\n\n**Details:**\n```\n{}\n```", readResult.unwrapErr());
 
         geode::MDPopup::create(
-            "Plist Save Failed",
+            "Plist Edit Failed",
             errorMsg,
             "OK", nullptr,
             [](bool) {}
@@ -1307,45 +1315,112 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
 
     std::string plistContent = readResult.unwrap();
 
-    // Create backup
-    auto backupResult = utils::file::writeString(backupPath, plistContent);
-    if (!backupResult) {
-        backupWasMade = false;
-        addToLog(fmt::format("<cy>Warning:</c> Failed to create backup file at {}.", backupPath), 2);
-        //log::warn("Failed to create backup file: {}", backupPath);
+    if (!remapNames) {
+        auto backupResult = utils::file::writeString(backupPath, plistContent);
+        if (!backupResult) {
+            backupWasMade = false;
+            addToLog(fmt::format("<cy>Warning:</c> Failed to create plist backup at {}.", backupPath), 2);
+        } else {
+            backupWasMade = true;
+        }
     } else {
-        backupWasMade = true;
-        //log::info("Created plist backup at: {}", backupPath);
+        backupWasMade = std::filesystem::exists(backupPath);
     }
 
     addToLog("---", 2);
     addToLog("### Modified Offsets:", 2);
 
     int updatedCount = 0;
+    int notFoundCount = 0;
     std::vector<std::string> successfulUpdates;
     std::vector<std::string> failedUpdates;
+    std::vector<std::string> notFoundFrames;
+
+    std::string iconShortName = icInfo->shortName;
+    std::string internalFrameName = "";
+
+    if (remapNames && !iconShortName.empty()) {
+        addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 0);
+        
+        std::string searchPattern = "_001.png"; // oh my GOD GEODE IT'S NOT A SPRITE I'M TRYING TO USE
+        size_t searchPos = plistContent.find(searchPattern);
+        
+        if (searchPos != std::string::npos) {
+            size_t keyStart = plistContent.rfind("<key>", searchPos);
+            if (keyStart != std::string::npos) {
+                size_t keyEnd = plistContent.find("</key>", keyStart);
+                if (keyEnd != std::string::npos) {
+                    std::string fullFrameName = plistContent.substr(keyStart + 5, keyEnd - (keyStart + 5));
+                    
+                    if (fullFrameName.length() > searchPattern.length()) {
+                        internalFrameName = fullFrameName.substr(0, fullFrameName.length() - searchPattern.length());
+                        addToLog(fmt::format("<cg>[REMAPPING]</c> Found internal frame name: `{}`", internalFrameName), 0);
+                        addToLog(fmt::format("<cy>[REMAPPING]</c> Replacing `{}` with `{}` to find frame names in plist.", iconShortName, internalFrameName), 0);
+                    }
+                }
+            }
+        }
+        
+        if (internalFrameName.empty()) {
+            addToLog("<cr>[ERROR]</c> Could not detect internal frame name from plist!", 0);
+            addToLog("The plist may not contain any frames with the standard naming pattern.", 0);
+            
+            std::string errorMsg = "## <cr>Internal Frame Name Not Found!</c>\n\n";
+            errorMsg += "Could not detect the internal frame name from the plist file.\n\n";
+            errorMsg += "<cp>This probably means:</c>\n";
+            errorMsg += "- Your icon's plist doesn't have any standard-named frames. (aka, `iconPart.png` instead of `iconPart_001.png`)\n";
+            errorMsg += "- Your plist's structure is corrupted or invalid.\n\n";
+            errorMsg += "**<cl>What do i do?</c>** - Try manually renaming the frames in your plist to match your icon's renamed name. Or, just manually change the offsets to whatever you found nice in the Workbench.";
+            
+            geode::MDPopup::create(
+                "Remapping Failed",
+                errorMsg,
+                "OK", nullptr,
+                [](bool) {}
+            )->show();
+            return;
+        }
+        
+        addToLog("---", 1);
+    }
 
     for (const auto& [frameName, offset] : m_modifiedOffsets) {
-        std::string frameKey = fmt::format("<key>{}</key>", frameName);
+        std::string searchFrameName = frameName;
+        
+        if (remapNames && !internalFrameName.empty() && !iconShortName.empty()) {
+            if (frameName.length() > iconShortName.length() && 
+                frameName.substr(0, iconShortName.length()) == iconShortName) {
+                
+                std::string suffix = frameName.substr(iconShortName.length());
+                
+                searchFrameName = internalFrameName + suffix;
+                
+                addToLog(fmt::format("<cy>[REMAPPED]</c> `{}` <cl>-></c> `{}`", frameName, searchFrameName), 0);
+            }
+        }
+        
+        std::string frameKey = fmt::format("<key>{}</key>", searchFrameName);
         size_t framePos = plistContent.find(frameKey);
 
         if (framePos == std::string::npos) {
-            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> frame **{}** not found in plist.", frameName));
-            //log::warn("'{}' not found in plist", frameKey);
+            if (!remapNames) {
+                notFoundFrames.push_back(frameName);
+                notFoundCount++;
+            } else {
+                failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> frame **{}** (remapped to `{}`) not found in plist even after remapping.", frameName, searchFrameName));
+            }
             continue;
         }
 
         size_t frameDictStart = plistContent.find("<dict>", framePos);
         if (frameDictStart == std::string::npos) {
-            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> opening <dict> for frame **{}** not found. ", frameName));
-            //log::warn("Couldn't find opening <dict> for frame '{}'", frameName);
+            failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> opening <dict> for frame **{}** not found.", frameName));
             continue;
         }
 
         size_t frameDictEnd = plistContent.find("</dict>", frameDictStart);
         if (frameDictEnd == std::string::npos) {
             failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> closing </dict> for frame **{}** not found.", frameName));
-            //log::warn("Couldn't find closing </dict> for frame '{}'", frameName);
             continue;
         }
 
@@ -1357,7 +1432,6 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
 
         if (offsetKeyPos == std::string::npos) {
             failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> spriteOffset for frame **{}** not found.", frameName));
-            //log::warn("Couldn't find spriteOffset key for frame '{}'", frameName);
             continue;
         }
 
@@ -1369,7 +1443,6 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
         if (stringStart == std::string::npos || stringEnd == std::string::npos ||
             stringStart > frameDictEnd || stringEnd > frameDictEnd) {
             failedUpdates.push_back(fmt::format("<cr>[ERROR]</c> spriteOffset string tags for frame **{}** not found.", frameName));
-            //log::warn("Couldn't find offset string tags for frame '{}'", frameName);
             continue;
         }
 
@@ -1383,23 +1456,67 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
             newOffsetStr
         );
 
-        successfulUpdates.push_back(fmt::format("**{}**: `{}`", frameName, newOffsetStr));
+        if (remapNames) {
+            successfulUpdates.push_back(fmt::format("**{}** <cl>-></c> `{}`: `{}`", frameName, searchFrameName, newOffsetStr));
+        } else {
+            successfulUpdates.push_back(fmt::format("**{}**: `{}`", frameName, newOffsetStr));
+        }
         updatedCount++;
-        //log::info("Successfully updated offset for '{}'", frameName);
+    }
+
+    if (!remapNames && notFoundCount > 0 && notFoundCount == m_modifiedOffsets.size()) {
+        std::stringstream retryMsg;
+        retryMsg << "# <cr>Frames Not Found.</c>\n\n";
+        retryMsg << "---";
+        retryMsg << "None of the frames you updated and were about to be changed were found in the plist file.\n\n";
+        retryMsg << "## <cy>This could be caused by a</c> <co>Renamed/Duplicate Icon</c>\n\n";
+        retryMsg << "If you've renamed this icon using More Icons' rename feature, the plist file still contains the old frame names, therefore, the mod isn't able to find the frames by searching for the icon's new name inside the plist file.\n\n";
+        retryMsg << "**For Example:**\n";
+        retryMsg << "- You renamed: `player_85` to `renamedtest`\n";
+        retryMsg << "- Construct is looking for: `renamedtest_001.png` to apply your changes.\n";
+        retryMsg << "- But, the plist file still has: `player_85_001.png`\n\n";
+        retryMsg << "### <cp>What Now?</co>\n\n";
+        retryMsg << "Click **Remap and Retry** to try and automatically find and use the internal frame names in your plist, instead of your icon's name.\n\n";
+        retryMsg << "Construct will then:\n";
+        retryMsg << "1. Try and find the first instance of a frame ending with `_001.png` in your plist.\n";
+        retryMsg << "2. Use this to try and find the icon's internal name. (e.g., `player_85_001.png` = `player_85`)\n";
+        retryMsg << "3. Replace your renamed name with the internal name.\n";
+        retryMsg << "4. Search for the correct frames to apply your changes.\n\n";
+        retryMsg << "<cy>**Note:**</c> If anything goes wrong, a backup of your icon's plist has been created at:\n";
+        retryMsg << "`" << backupPath << "`\n\n";
+        retryMsg << "So i'd recommend giving remapping a shot anyways.\n\n"
+        retryMsg << "### <cr>Frames that weren't found:</cr>\n\n";
+        for (const auto& frame : notFoundFrames) {
+            retryMsg << "- `" << frame << "`\n";
+        }
+
+        std::string retryMsgStr = retryMsg.str();
+        
+        geode::MDPopup::create(
+            "Couldn't find Frames",
+            retryMsgStr,
+            "Cancel", "Remap and Retry",
+            [this](bool btn2) {
+                if (btn2) {
+                    processPlistSave(true);
+                }
+            }
+        )->show();
+        
+        return;
     }
 
     if (!successfulUpdates.empty()) {
         addToLog(fmt::format("### <cg>Successfully Applied Updates: ({})</c>", updatedCount), 2);
         for (const auto& update : successfulUpdates) {
             addToLog(fmt::format("- <cg>{}</c>", update), 0);
-            
         }
     }
 
     if (!failedUpdates.empty()) {
         addToLog(fmt::format("### <cr>Unapplied/Failed Updates ({})</c>", failedUpdates.size()), 2);
         for (const auto& failure : failedUpdates) {
-            addToLog(fmt::format("- <cr>{}</c>", failure), 0);
+            addToLog(fmt::format("- {}", failure), 0);
         }
     }
 
@@ -1450,10 +1567,19 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
     addToLog(fmt::format("**Plist Path:**\n`{}`", plistPath), 1);
     addToLog(fmt::format("**Backup Path:**\n`{}`", backupPath), 1);
     addToLog("<cy>Remember to reload textures to see the applied changes!</c>", 2);
+    
+    if (remapNames) {
+        addToLog("---", 2);
+        addToLog("<cy>**Frame Name Remapping was used**</c>", 2);
+        addToLog(fmt::format("Found icon internal name: `{}`", internalFrameName), 1);
+        addToLog(fmt::format("Replaced `{}` with `{}` in all frame searches.", iconShortName, internalFrameName), 1);
+        addToLog("If anything goes wrong or your icon looks bad after these changes, you can restore from the created backup file ", 1);
+    }
+    
     if (backupWasMade) {
         addToLog("---", 2);
-        addToLog("<cg>Plist backup created successfully!</c>", 2);
-        addToLog(fmt::format("**Backup created at:** `{}`", backupPath), 1);
+        addToLog("<cg>Plist backup exists!</c>", 2);
+        addToLog(fmt::format("**Backup is saved to:** `{}`", backupPath), 1);
     }
 
     std::string finalLog = m_logStream.str();
@@ -1469,8 +1595,6 @@ void IconOffsetEditorPopup::onSavePlist(CCObject* sender) {
             }
         }
     )->show();
-
-    //log::info("Successfully edited plist at '{}', with {} changes", plistPath, updatedCount);
 
     m_modifiedOffsets.clear();
 }

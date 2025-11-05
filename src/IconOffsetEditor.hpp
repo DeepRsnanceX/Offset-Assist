@@ -89,6 +89,7 @@ protected:
     void mapRobotSpiderSprites(CCNode* node);
     void applyOffsetToAllMatchingSprites(CCNode* node, const std::string& frameName, CCPoint offset);
     void addToLog(const std::string& logMsg, int newLines);
+    void processPlistSave(bool remapNames);
     CCSprite* getCurrentSelectedSprite();
     CCImage* getIconImage();
     std::string getCurrentRealFrameName();
