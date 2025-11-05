@@ -168,7 +168,7 @@ protected:
             "chatFont.fnt"
         );
         infoLabel->setPosition({winSize.width / 2.0f, winSize.height / 2.0f + 23.0f});
-        infoLabel->setScale(0.4f);
+        infoLabel->setScale(0.45f);
         infoLabel->setAlignment(CCTextAlignment::kCCTextAlignmentCenter);
         this->m_mainLayer->addChild(infoLabel);
         
@@ -716,7 +716,7 @@ bool IconOffsetEditorPopup::setup() {
 
     auto addXMenu = CCMenu::create();
     addXMenu->addChild(addXBtn);
-    addXMenu->setPosition({inputX + 55.0f, inputYTop});
+    addXMenu->setPosition({inputX - 10.0f, inputYTop + 10.f});
     this->m_mainLayer->addChild(addXMenu);
 
     // y offset
@@ -748,7 +748,7 @@ bool IconOffsetEditorPopup::setup() {
 
     auto addYMenu = CCMenu::create();
     addYMenu->addChild(addYBtn);
-    addYMenu->setPosition({inputX + 55.0f, inputYTop - 40.0f});
+    addYMenu->setPosition({inputX - 10.0f, inputYTop - 30.0f});
     this->m_mainLayer->addChild(addYMenu);
     
     // action buttons hi

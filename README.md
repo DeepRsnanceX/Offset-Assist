@@ -17,3 +17,11 @@ The mod has various general utilities for Icon Creators, such as:
 - **Gameplay-Accurate Hitbox Preview**: Wanna check if your icons are too big/too small relative to the game's hitbox? Toggle the Hitbox Preview on and see if there's anything you need to adjust!
 - **Quick Color Changing**: Too lazy to press ESC and do a few clicks to change your colors? That's okay, you can change the Preview Icon's colors directly from the Popup! And you're not even limited to the game's selection of colors, you've got full RGB & Hex Codes Support!
 - **Icon Renderer**: Once your icon's done, if you wanna show it off to the people quickly, you can click on the top left's *Camera Button* and immediately render your icon into a PNG image! Inside the mod's settings you can customize the folder your Renders are saved onto, as well as the background color your renders have! (If you want them to have one)
+- **Quick Addition/Substraction to Offsets**: Want to move your entire icon 7 pixels up, but all your offsets are all over the place and all of them are different? Are u as bad at math as the creator of this mod and can't spend a solid minute calculating what number to set? No problem! Clicking the little "+" buttons located next to the Text Inputs will open a small popup where you can input any number, positive or negative, and it'll add that number to the chosen offset!
+
+## Recommended mods
+Some recommended mods to use alongside Icon Construct are the following:
+
+- More Icons: Mandatory for the mod to work.
+- Better Touch Prio: Could fix any Touch Priority issues in the mod's popup if "Update On Text Change" is enabled. (AKA, fixes still being able to interact with the Garage behind the mod's popup.)
+- Scroll Inputs: Could help adjust offsets easier by using the mouse wheel to increase/decrease the offsets for Icon Parts, instead of having to type in the values manually.

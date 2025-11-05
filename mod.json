@@ -18,7 +18,7 @@
 		"update-offsets-live": {
 			"type": "bool",
 			"name": "Update On Text Change",
-			"description": "Attempts to update the Sprite Offsets anytime the Text Inputs are changed. \nToggleable in case this causes instability issues for anyone.",
+			"description": "Attempts to update the Sprite Offsets anytime the Text Inputs are changed. \nToggleable in case this causes instability issues for anyone. Most notable issue is messing up the Touch Priority of the mod's popup. Installing the 'Better Touch Prio' mod is recommended in case you wanna keep this feature on.",
 			"default": false
 		},
 		"renders-path": {
