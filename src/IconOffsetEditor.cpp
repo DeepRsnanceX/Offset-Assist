@@ -395,6 +395,7 @@ bool IconOffsetEditorPopup::setup() {
     m_colorPickerMenu->setContentSize({20.f, 70.f});
     m_colorPickerMenu->updateLayout();
     m_colorPickerMenu->setPosition({-20.f, midY});
+    m_colorPickerMenu->setID("color-picker-menu"_spr);
     this->m_mainLayer->addChild(m_colorPickerMenu);
 
     m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
@@ -419,6 +420,7 @@ bool IconOffsetEditorPopup::setup() {
             ->setAutoScale(false)
     );
 
+    colLabelsNode->setID("color-labels-container"_spr);
     colLabelsNode->setAnchorPoint({0.5f, 0.5f});
     colLabelsNode->addChild(col1Label);
     colLabelsNode->addChild(col2Label);
@@ -439,6 +441,7 @@ bool IconOffsetEditorPopup::setup() {
     m_iconContainerNode->setPosition({midX + 75.f, midY});
     m_iconContainerNode->setScale(2.f);
     m_iconContainerNode->setZOrder(2);
+    m_iconContainerNode->setID("icon-container"_spr);
 
     auto midContainerX = m_iconContainerNode->getContentSize().width / 2.f;
     auto midContainerY = m_iconContainerNode->getContentSize().height / 2.f;
@@ -459,6 +462,7 @@ bool IconOffsetEditorPopup::setup() {
     // -----------------------
     if (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack) {        
         m_cubePreview = CCSprite::create("exampleCube.png"_spr);
+        m_cubePreview->setID("example-cube-preview"_spr);
         
         // welcome back icon preview
         if (m_currentIconType == IconType::Ship) {
@@ -491,6 +495,7 @@ bool IconOffsetEditorPopup::setup() {
         auto opacityMenu = CCMenu::create();
         opacityMenu->addChild(m_cubeOpacitySlider);
         opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        opacityMenu->setID("cube-opacity-menu"_spr);
         this->m_mainLayer->addChild(opacityMenu);
         
         m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
@@ -504,6 +509,7 @@ bool IconOffsetEditorPopup::setup() {
     // PREVIEW CONTROLS MENU (Glow + Hitbox)
     // -----------------------
     auto previewMenu = CCMenu::create();
+    previewMenu->setID("preview-controllers-menu"_spr);
     previewMenu->setPosition({midX + 75.0f, midY - 60.f});
     previewMenu->setContentSize({80.f, 30.f});
     previewMenu->setLayout(
@@ -569,6 +575,7 @@ bool IconOffsetEditorPopup::setup() {
         m_animButtonsMenu->setPosition({lowerMenuX, lowerMenuBaseY - 5.f});
         m_animButtonsMenu->setScale(0.6f);
         m_animButtonsMenu->setContentSize({200.f, 40.f});
+        m_animButtonsMenu->setID("animation-players-menu"_spr);
         m_animButtonsMenu->setLayout(
             RowLayout::create()
                 ->setGap(4.f)
@@ -675,6 +682,7 @@ bool IconOffsetEditorPopup::setup() {
         auto sliderMenu = CCMenu::create();
         sliderMenu->addChild(m_rotationSpeedSlider);
         sliderMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        sliderMenu->setID("slider-menu"_spr);
         this->m_mainLayer->addChild(sliderMenu);
         
         m_rotationSpeedLabel = CCLabelBMFont::create("1.0", "bigFont.fnt");
@@ -717,6 +725,7 @@ bool IconOffsetEditorPopup::setup() {
     auto addXMenu = CCMenu::create();
     addXMenu->addChild(addXBtn);
     addXMenu->setPosition({inputX - 10.0f, inputYTop + 10.f});
+    addXMenu->setID("add-to-x-menu"_spr);
     this->m_mainLayer->addChild(addXMenu);
 
     // y offset
@@ -749,6 +758,7 @@ bool IconOffsetEditorPopup::setup() {
     auto addYMenu = CCMenu::create();
     addYMenu->addChild(addYBtn);
     addYMenu->setPosition({inputX - 10.0f, inputYTop - 30.0f});
+    addYMenu->setID("add-to-y-menu"_spr);
     this->m_mainLayer->addChild(addYMenu);
     
     // action buttons hi
@@ -821,12 +831,13 @@ bool IconOffsetEditorPopup::setup() {
     }
 
     //float bgHeight = partCount * 40.f + 25.f;
-    float bgWidth = (isRobotOrSpider) ? 90.f : 60.f;
+    float bgWidth = (isRobotOrSpider) ? 120.f : 60.f;
     auto partBg = CCScale9Sprite::create("GJ_square01.png");
     partBg->setAnchorPoint({0.f, 0.5f});
     partBg->setContentSize({bgWidth, 200.f});
     partBg->setPosition({size.width + 25.f, midY});
     partBg->setOpacity(255);
+    partBg->setID("parts-picker-bg"_spr);
     this->m_mainLayer->addChild(partBg, -1);
     
     m_partSelectMenu = CCMenu::create();
@@ -849,10 +860,11 @@ bool IconOffsetEditorPopup::setup() {
     
     
     float lowerBy = (m_currentIconType == IconType::Ufo) ? 10.f : 0.f;
-    float moveBy = (isRobotOrSpider) ? 45.f : 30.f;
+    float moveBy = (isRobotOrSpider) ? 60.f : 30.f;
     m_partSelectMenu->setPosition({partBg->getPositionX() + moveBy, midY - lowerBy});
     m_partSelectMenu->setContentSize({20.0f, 105.f});
     m_partSelectMenu->setScale(1.75f);
+    m_partSelectMenu->setID("part-select-menu"_spr);
     this->m_mainLayer->addChild(m_partSelectMenu);
     
     if (isRobotOrSpider) {
