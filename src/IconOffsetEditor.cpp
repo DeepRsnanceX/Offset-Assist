@@ -1296,7 +1296,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
     addToLog("## Plist Editing Process", 0);
     
     if (remapNames) {
-        addToLog("<cy>**Note:** Using frame name remapping workaround.</c>", 2);
+        addToLog("<cy>**Note:** Edits made while using frame name remapping workaround.</c>", 2);
     }
 
     std::string backupPath = plistPath + ".bak";
@@ -1340,7 +1340,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
     std::string internalFrameName = "";
 
     if (remapNames && !iconShortName.empty()) {
-        addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 0);
+        addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 1);
         
         std::string searchPattern = "_001.png"; // oh my GOD GEODE IT'S NOT A SPRITE I'M TRYING TO USE
         size_t searchPos = plistContent.find(searchPattern);
@@ -1354,8 +1354,8 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
                     
                     if (fullFrameName.length() > searchPattern.length()) {
                         internalFrameName = fullFrameName.substr(0, fullFrameName.length() - searchPattern.length());
-                        addToLog(fmt::format("<cg>[REMAPPING]</c> Found internal frame name: `{}`", internalFrameName), 0);
-                        addToLog(fmt::format("<cy>[REMAPPING]</c> Replacing `{}` with `{}` to find frame names in plist.", iconShortName, internalFrameName), 0);
+                        addToLog(fmt::format("<cg>[REMAPPING]</c> Found internal frame name: `{}`", internalFrameName), 1);
+                        addToLog(fmt::format("<cy>[REMAPPING]</c> Replacing `{}` with `{}` to find frame names in plist.", iconShortName, internalFrameName), 1);
                     }
                 }
             }
@@ -1484,7 +1484,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
         retryMsg << "4. Search for the correct frames to apply your changes.\n\n";
         retryMsg << "<cy>**Note:**</c> If anything goes wrong, a backup of your icon's plist has been created at:\n";
         retryMsg << "`" << backupPath << "`\n\n";
-        retryMsg << "So i'd recommend giving remapping a shot anyways.\n\n"
+        retryMsg << "So i'd recommend giving remapping a shot anyways.\n\n";
         retryMsg << "### <cr>Frames that weren't found:</cr>\n\n";
         for (const auto& frame : notFoundFrames) {
             retryMsg << "- `" << frame << "`\n";
