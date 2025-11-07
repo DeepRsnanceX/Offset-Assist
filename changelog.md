@@ -1,4 +1,4 @@
-# v1.0.1
+# v1.1.0
 - Added Node IDs to UI elements.
 - Increased horizontal size for parts side menu in Robot/Spider modes to accomodate for some potentially broken icons taking up too much space.
 - Added **Swing Fires** preview for Swing icons.
