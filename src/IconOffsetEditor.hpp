@@ -28,6 +28,10 @@ protected:
     SimplePlayer* m_previewPlayer = nullptr;
     CCNode* m_iconContainerNode = nullptr;
     CCSprite* m_cubePreview = nullptr;
+    PlayerFireBoostSprite* m_swingTopFire = nullptr;
+    PlayerFireBoostSprite* m_swingMidFire = nullptr;
+    PlayerFireBoostSprite* m_swingBotFire = nullptr;
+
     geode::TextInput* m_inputX = nullptr;
     geode::TextInput* m_inputY = nullptr;
     CCLabelBMFont* m_labelX = nullptr;
@@ -78,7 +82,7 @@ protected:
     void onPlayBallRotation(CCObject* sender);
     void onStopBallRotation(CCObject* sender);
     void onRotationSpeedChanged(CCObject* sender);
-    void onCubeOpacityChanged(CCObject* sender);
+    void onExtraPreviewOpacityChanged(CCObject* sender);
     void onRenderIcon(CCObject* sender);
     void onModSettings(CCObject* sender);
     void updateInputFields();

@@ -333,6 +333,10 @@ bool IconOffsetEditorPopup::setup() {
         menu_selector(IconOffsetEditorPopup::onOpenRendersFolder)
     );
 
+    infoBtn->setID("info-button"_spr);
+    renderBtn->setID("render-icon"_spr);
+    openFolderBtn->setID("open-renders-folder"_spr);
+
     auto topRightMenu = CCMenu::create();
     topRightMenu->addChild(infoBtn);
     topRightMenu->addChild(openFolderBtn);
@@ -354,7 +358,6 @@ bool IconOffsetEditorPopup::setup() {
     // -----------------------
     // SETTINGS BUTTON THINGY HI
     // -----------------------
-
     auto optionsBtn02Spr = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
     auto optionsBtn02Btn = CCMenuItemSpriteExtra::create(optionsBtn02Spr, this, menu_selector(IconOffsetEditorPopup::onModSettings));
     auto optionsBtnMenu = CCMenu::create();
@@ -407,6 +410,10 @@ bool IconOffsetEditorPopup::setup() {
     auto col1Label = CCLabelBMFont::create("Col 1", "bigFont.fnt");
     auto col2Label = CCLabelBMFont::create("Col 2", "bigFont.fnt");
     auto col3Label = CCLabelBMFont::create("Glow", "bigFont.fnt");
+
+    col1Label->setID("color1-label"_spr);
+    col2Label->setID("color2-label"_spr);
+    col3Label->setID("color3-label"_spr);
 
     col1Label->setOpacity(160);
     col2Label->setOpacity(160);
@@ -486,7 +493,7 @@ bool IconOffsetEditorPopup::setup() {
         
         m_cubeOpacitySlider = Slider::create(
             this,
-            menu_selector(IconOffsetEditorPopup::onCubeOpacityChanged),
+            menu_selector(IconOffsetEditorPopup::onExtraPreviewOpacityChanged),
             0.6f
         );
         m_cubeOpacitySlider->setValue(1.0f);
@@ -496,6 +503,62 @@ bool IconOffsetEditorPopup::setup() {
         opacityMenu->addChild(m_cubeOpacitySlider);
         opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
         opacityMenu->setID("cube-opacity-menu"_spr);
+        this->m_mainLayer->addChild(opacityMenu);
+        
+        m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
+        m_cubeOpacityLabel->setPosition({lowerMenuX, lowerMenuBaseY - 10.f});
+        m_cubeOpacityLabel->setScale(0.25f);
+        m_cubeOpacityLabel->setOpacity(150);
+        m_cubeOpacityLabel->setID("cube-opacity-label"_spr);
+        this->m_mainLayer->addChild(m_cubeOpacityLabel);
+    }
+
+    // -----------------------
+    // SWING FIRE PREVIEW
+    // -----------------------
+    if (m_currentIconType == IconType::Swing) {
+        m_swingTopFire = PlayerFireBoostSprite::create();
+        m_swingMidFire = PlayerFireBoostSprite::create();
+        m_swingBotFire = PlayerFireBoostSprite::create();
+
+        m_iconContainerNode->addChild(m_swingTopFire, -2);
+        m_iconContainerNode->addChild(m_swingMidFire, -2);
+        m_iconContainerNode->addChild(m_swingBotFire, -2);
+
+        m_swingTopFire->setPosition({midContainerX - 9.5f, midContainerY + 10.f});
+        m_swingMidFire->setPosition({midContainerX - 14.f, midContainerY});
+        m_swingBotFire->setPosition({midContainerX - 9.5f, midContainerY - 10.f});
+
+        m_swingTopFire->setRotation(135);
+        m_swingMidFire->setRotation(90);
+        m_swingBotFire->setRotation(45);
+
+        m_swingTopFire->setID("swing-top-fire-preview"_spr);
+        m_swingMidFire->setID("swing-middle-fire-preview"_spr);
+        m_swingBotFire->setID("swing-bottom-fire-preview"_spr);
+
+        m_swingTopFire->loopFireAnimation();
+        m_swingMidFire->loopFireAnimation();
+        m_swingBotFire->loopFireAnimation();
+
+        // control fire opacities
+        auto opacityLabel = CCLabelBMFont::create("Swing Fires Opacity:", "goldFont.fnt");
+        opacityLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
+        opacityLabel->setScale(0.35f);
+        this->m_mainLayer->addChild(opacityLabel);
+        
+        m_cubeOpacitySlider = Slider::create(
+            this,
+            menu_selector(IconOffsetEditorPopup::onExtraPreviewOpacityChanged),
+            0.6f
+        );
+        m_cubeOpacitySlider->setValue(1.0f);
+        m_cubeOpacitySlider->m_sliderBar->setContentSize({60.f, m_cubeOpacitySlider->m_sliderBar->getContentSize().height});
+        
+        auto opacityMenu = CCMenu::create();
+        opacityMenu->addChild(m_cubeOpacitySlider);
+        opacityMenu->setPosition({lowerMenuX, lowerMenuBaseY});
+        opacityMenu->setID("swing-fires-opacity-menu"_spr);
         this->m_mainLayer->addChild(opacityMenu);
         
         m_cubeOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
@@ -541,6 +604,9 @@ bool IconOffsetEditorPopup::setup() {
     );
     previewMenu->addChild(m_hitboxToggler);
 
+    m_glowToggler->setID("toggle-glow"_spr);
+    m_hitboxToggler->setID("toggle-hitbox"_spr);
+
     previewMenu->updateLayout();
 
     if (isRobotOrSpider) {
@@ -562,6 +628,7 @@ bool IconOffsetEditorPopup::setup() {
     m_hitboxDrawNode = CCDrawNode::create();
     m_hitboxDrawNode->setZOrder(10);
     m_hitboxDrawNode->setVisible(false);
+    m_hitboxDrawNode->setID("hitbox-preview"_spr);
     //if (m_currentIconType == IconType::Ship) m_hitboxDrawNode->setPosition({0.f, 10.f});
     this->m_mainLayer->addChild(m_hitboxDrawNode);
 
@@ -587,6 +654,7 @@ bool IconOffsetEditorPopup::setup() {
         auto animDescLabel = CCLabelBMFont::create("Test Animations", "goldFont.fnt");
         animDescLabel->setPosition({lowerMenuX, lowerMenuBaseY + 15.f});
         animDescLabel->setScale(0.4f);
+        animDescLabel->setID("test-animations-label"_spr);
         this->m_mainLayer->addChild(animDescLabel);
         
         if (m_currentIconType == IconType::Robot) {
@@ -599,6 +667,7 @@ bool IconOffsetEditorPopup::setup() {
                     menu_selector(IconOffsetEditorPopup::onPlayAnimation)
                 );
                 btn->setUserObject(CCString::create(animName));
+                btn->setID(fmt::format("play-{}-anim", animName));
                 return btn;
             };
             
@@ -652,6 +721,7 @@ bool IconOffsetEditorPopup::setup() {
             this,
             menu_selector(IconOffsetEditorPopup::onPlayBallRotation)
         );
+        playBtn->setID("play-rolling"_spr);
         
         auto stopLbl = CCLabelBMFont::create("Stop", "bigFont.fnt");
         stopLbl->setScale(0.35f);
@@ -660,6 +730,7 @@ bool IconOffsetEditorPopup::setup() {
             this,
             menu_selector(IconOffsetEditorPopup::onStopBallRotation)
         );
+        stopBtn->setID("stop-rolling"_spr);
         
         m_animButtonsMenu->addChild(playBtn);
         m_animButtonsMenu->addChild(stopBtn);
@@ -669,6 +740,7 @@ bool IconOffsetEditorPopup::setup() {
         auto speedLabel = CCLabelBMFont::create("Full Spin Duration:", "bigFont.fnt");
         speedLabel->setPosition({lowerMenuX - 15.f, lowerMenuBaseY + 15.f});
         speedLabel->setScale(0.3f);
+        speedLabel->setID("spin-label"_spr);
         this->m_mainLayer->addChild(speedLabel);
         
         m_rotationSpeedSlider = Slider::create(
@@ -688,6 +760,7 @@ bool IconOffsetEditorPopup::setup() {
         m_rotationSpeedLabel = CCLabelBMFont::create("1.0", "bigFont.fnt");
         m_rotationSpeedLabel->setPosition({lowerMenuX + 50.f, lowerMenuBaseY + 15.f});
         m_rotationSpeedLabel->setScale(0.3f);
+        m_rotationSpeedLabel->setID("rotation-speed-label"_spr);
         this->m_mainLayer->addChild(m_rotationSpeedLabel);
     }
 
@@ -700,12 +773,14 @@ bool IconOffsetEditorPopup::setup() {
     m_labelX->setPosition({inputX - 80.0f, inputYTop});
     m_labelX->setScale(0.4f);
     m_labelX->setAnchorPoint({0.0f, 0.5f});
+    m_labelX->setID("x-offset-label"_spr);
     this->m_mainLayer->addChild(m_labelX);
 
     m_inputX = geode::TextInput::create(80.0f, "0.0", "bigFont.fnt");
     m_inputX->setPosition({inputX + 20.0f, inputYTop});
     m_inputX->setScale(0.7f);
     m_inputX->setFilter("0123456789.-");
+    m_inputX->setID("x-offset-input"_spr);
     this->m_mainLayer->addChild(m_inputX);
     if (Mod::get()->getSettingValue<bool>("update-offsets-live")) {
         m_inputX->setCallback([this](std::string const&) {
@@ -721,6 +796,7 @@ bool IconOffsetEditorPopup::setup() {
         this,
         menu_selector(IconOffsetEditorPopup::onAddToOffsetX)
     );
+    addXBtn->setID("add-to-x-offset"_spr);
 
     auto addXMenu = CCMenu::create();
     addXMenu->addChild(addXBtn);
@@ -733,12 +809,14 @@ bool IconOffsetEditorPopup::setup() {
     m_labelY->setPosition({inputX - 80.0f, inputYTop - 40.0f});
     m_labelY->setScale(0.4f);
     m_labelY->setAnchorPoint({0.0f, 0.5f});
+    m_labelY->setID("y-offset-label"_spr);
     this->m_mainLayer->addChild(m_labelY);
 
     m_inputY = geode::TextInput::create(80.0f, "0.0", "bigFont.fnt");
     m_inputY->setPosition({inputX + 20.0f, inputYTop - 40.0f});
     m_inputY->setScale(0.7f);
     m_inputY->setFilter("0123456789.-");
+    m_inputY->setID("y-offset-input"_spr);
     this->m_mainLayer->addChild(m_inputY);
     if (Mod::get()->getSettingValue<bool>("update-offsets-live")) {
         m_inputY->setCallback([this](std::string const&) {
@@ -754,6 +832,7 @@ bool IconOffsetEditorPopup::setup() {
         this,
         menu_selector(IconOffsetEditorPopup::onAddToOffsetY)
     );
+    addYBtn->setID("add-to-y-offset"_spr);
 
     auto addYMenu = CCMenu::create();
     addYMenu->addChild(addYBtn);
@@ -768,6 +847,7 @@ bool IconOffsetEditorPopup::setup() {
         this,
         menu_selector(IconOffsetEditorPopup::onUpdateOffsets)
     );
+    m_updateButton->setID("update-offsets"_spr);
 
     auto savePlistSpr = ButtonSprite::create("Apply", "goldFont.fnt", "GJ_button_01.png", 0.7f);
     auto savePlistBtn = CCMenuItemSpriteExtra::create(
@@ -775,6 +855,7 @@ bool IconOffsetEditorPopup::setup() {
         this,
         menu_selector(IconOffsetEditorPopup::onSavePlist)
     );
+    savePlistBtn->setID("save-to-plist"_spr);
     
     auto buttonMenu = CCMenu::create();
     buttonMenu->setPosition({midX, -20.f});
@@ -858,14 +939,13 @@ bool IconOffsetEditorPopup::setup() {
         );
     }
     
-    
     float lowerBy = (m_currentIconType == IconType::Ufo) ? 10.f : 0.f;
     float moveBy = (isRobotOrSpider) ? 60.f : 30.f;
     m_partSelectMenu->setPosition({partBg->getPositionX() + moveBy, midY - lowerBy});
-    m_partSelectMenu->setContentSize({20.0f, 105.f});
+    m_partSelectMenu->setContentSize({m_partSelectMenu->getContentSize().width, 105.f});
     m_partSelectMenu->setScale(1.75f);
     m_partSelectMenu->setID("part-select-menu"_spr);
-    this->m_mainLayer->addChild(m_partSelectMenu);
+    this->m_mainLayer->addChild(m_partSelectMenu, 2);
     
     if (isRobotOrSpider) {
         for (int i = 0; i < m_frameNames.size(); i++) {
@@ -887,6 +967,7 @@ bool IconOffsetEditorPopup::setup() {
             );
             button->setTag(i);
             button->setUserObject(CCString::create(frameName));
+            button->setID(fmt::format("{}-btn", frameName));
 
             auto btnSize = button->getContentSize();
             if (btnSize.width <= 5.f || btnSize.height <= 5.f) {
@@ -917,6 +998,7 @@ bool IconOffsetEditorPopup::setup() {
             );
             button->setTag(static_cast<int>(part));
             button->setUserObject(CCString::create(tooltip));
+            button->setID(fmt::format("{}-btn", tooltip));
 
             auto btnSize = button->getContentSize();
             if (btnSize.width <= 5.f || btnSize.height <= 5.f) {
@@ -933,13 +1015,13 @@ bool IconOffsetEditorPopup::setup() {
             m_partSelectMenu->addChild(button);
         };
         
-        createPartButton(SelectedSpritePart::FirstLayer, m_previewPlayer->m_firstLayer, "First Layer");
-        createPartButton(SelectedSpritePart::SecondLayer, m_previewPlayer->m_secondLayer, "Second Layer");
-        createPartButton(SelectedSpritePart::Outline, m_previewPlayer->m_outlineSprite, "Outline");
-        createPartButton(SelectedSpritePart::Detail, m_previewPlayer->m_detailSprite, "Detail");
+        createPartButton(SelectedSpritePart::FirstLayer, m_previewPlayer->m_firstLayer, "Primary");
+        createPartButton(SelectedSpritePart::SecondLayer, m_previewPlayer->m_secondLayer, "Secondary");
+        createPartButton(SelectedSpritePart::Outline, m_previewPlayer->m_outlineSprite, "Glow");
+        createPartButton(SelectedSpritePart::Detail, m_previewPlayer->m_detailSprite, "Extra");
         
         if (m_currentIconType == IconType::Ufo && m_previewPlayer->m_birdDome) {
-            createPartButton(SelectedSpritePart::Dome, m_previewPlayer->m_birdDome, "Dome");
+            createPartButton(SelectedSpritePart::Dome, m_previewPlayer->m_birdDome, "UFO Dome");
         }
     }
     
@@ -1203,11 +1285,20 @@ void IconOffsetEditorPopup::onRotationSpeedChanged(CCObject* sender) {
     if (m_isRotating) onPlayBallRotation(nullptr);
 }
 
-void IconOffsetEditorPopup::onCubeOpacityChanged(CCObject* sender) {
-    if (!m_cubePreview) return;
+void IconOffsetEditorPopup::onExtraPreviewOpacityChanged(CCObject* sender) {
+    bool isRiderMode = (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo || m_currentIconType == IconType::Jetpack);
     
     float opacity = m_cubeOpacitySlider->getValue();
-    m_cubePreview->setOpacity(static_cast<GLubyte>(opacity * 255));
+
+    if (isRiderMode) {
+        if (!m_cubePreview) return;
+        m_cubePreview->setOpacity(static_cast<GLubyte>(opacity * 255));
+    } else if (m_currentIconType == IconType::Swing) {
+        if (!m_swingBotFire || !m_swingMidFire || !m_swingTopFire) return;
+        m_swingBotFire->setOpacity(static_cast<GLubyte>(opacity * 255));
+        m_swingMidFire->setOpacity(static_cast<GLubyte>(opacity * 255));
+        m_swingTopFire->setOpacity(static_cast<GLubyte>(opacity * 255));
+    }
     
     if (m_cubeOpacityLabel) m_cubeOpacityLabel->setString(fmt::format("{}%", static_cast<int>(opacity * 100)).c_str());
 }
@@ -1224,7 +1315,7 @@ CCMenuItemSpriteExtra* IconOffsetEditorPopup::createColorPickerButton(const std:
     );
     
     button->setUserObject(CCString::create(colorId));
-    button->setID((colorId + "-btn").c_str());
+    button->setID(fmt::format("{}-btn"_spr, colorId));
     
     return button;
 }
@@ -1741,37 +1832,46 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
         log::error("Preview player or container node is null");
         return nullptr;
     }
-    
+
     auto origIconPos = m_previewPlayer->getPosition();
     auto origContainerScale = m_iconContainerNode->getScale();
     auto origContainerPos = m_iconContainerNode->getPosition();
-    
+
     auto bgCol = Mod::get()->getSettingValue<ccColor4B>("bg-color");
-    
     auto canvasSize = m_iconContainerNode->getContentSize();
-    
+
     int extraW = (m_currentIconType == IconType::Ship || m_currentIconType == IconType::Ufo) ? 6 : 0;
     int extraH = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 8 : 0;
-    
+
+    if (m_currentIconType == IconType::Swing && Mod::get()->getSettingValue<bool>("extra-swing-space")) {
+        extraW = extraW + 15.f;
+        extraH = extraH + 8.f;
+    }
+
     int texWidth = static_cast<int>(canvasSize.width) + extraW;
     int texHeight = static_cast<int>(canvasSize.height) + extraH;
-    
+
+    float midX = texWidth / 2.f;
+    float midY = texHeight / 2.f;
+
     auto renderTex = CCRenderTexture::create(texWidth, texHeight, kCCTexture2DPixelFormat_RGBA8888);
     if (!renderTex) {
         log::warn("couldn't create render texture.");
         return nullptr;
     }
-    
+
     m_iconContainerNode->setScale(1.0f);
     m_iconContainerNode->setPosition({texWidth / 2.0f, texHeight / 2.0f});
-    
+
     float newPosX = origIconPos.x;
     float newPosY = origIconPos.y;
-    
+
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
         newPosY = newPosY - 6.f;
     } else if (m_currentIconType == IconType::Ufo) {
         newPosY = newPosY - 4.f;
+    } else if (m_currentIconType == IconType::Swing && Mod::get()->getSettingValue<bool>("extra-swing-space")) {
+        newPosX = newPosX + 6.f;
     }
 
     CCPoint origCubePos;
@@ -1783,18 +1883,37 @@ CCImage* IconOffsetEditorPopup::getIconImage() {
         if (m_currentIconType == IconType::Ufo) newCubePosY = newCubePosY - 4.f;
         m_cubePreview->setPosition({newCubePosX, newCubePosY});
     }
-    
+
+    CCPoint origSwingTopPos, origSwingMidPos, origSwingBotPos;
+    bool hasSwingFires = (m_currentIconType == IconType::Swing && m_swingTopFire && m_swingMidFire && m_swingBotFire);
+    if (hasSwingFires) {
+        origSwingTopPos = m_swingTopFire->getPosition();
+        origSwingMidPos = m_swingMidFire->getPosition();
+        origSwingBotPos = m_swingBotFire->getPosition();
+
+        float swingOffsetX = 6.f;
+        m_swingTopFire->setPosition({origSwingTopPos.x + swingOffsetX, origSwingTopPos.y});
+        m_swingMidFire->setPosition({origSwingMidPos.x + swingOffsetX, origSwingMidPos.y});
+        m_swingBotFire->setPosition({origSwingBotPos.x + swingOffsetX, origSwingBotPos.y});
+    }
+
     m_previewPlayer->setPosition({newPosX, newPosY});
-    
+
     renderTex->beginWithClear(bgCol.r / 255.f, bgCol.g / 255.f, bgCol.b / 255.f, bgCol.a / 255.f);
     m_iconContainerNode->visit();
     renderTex->end();
-    
+
     m_iconContainerNode->setScale(origContainerScale);
     m_iconContainerNode->setPosition(origContainerPos);
     m_previewPlayer->setPosition(origIconPos);
     if (m_cubePreview) m_cubePreview->setPosition(origCubePos);
-    
+
+    if (hasSwingFires) {
+        m_swingTopFire->setPosition(origSwingTopPos);
+        m_swingMidFire->setPosition(origSwingMidPos);
+        m_swingBotFire->setPosition(origSwingBotPos);
+    }
+
     CCImage* image = renderTex->newCCImage();
     return image;
 }
@@ -1810,7 +1929,7 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
     
     if (!std::filesystem::exists(renderPath)) std::filesystem::create_directories(renderPath);
     
-    std::string renderFilename = fmt::format("{}-{}.png", icInfo->shortName, getRandomInt(1, 9999));
+    std::string renderFilename = fmt::format("{}-{}_{}.png", icInfo->shortName, getRandomInt(1, 9999), getRandomInt(1, 9999));
     
     auto finalPath = renderPath / renderFilename;
     
@@ -2036,7 +2155,7 @@ class $modify(OffsetEditorGarageLayer, GJGarageLayer) {
             this->addChild(menu);
         }
         
-        editorButton->setID("offset-editor-btn");
+        editorButton->setID("icon-workbench"_spr);
         editorButton->setPosition({-180.0f, 120.0f});
         menu->addChild(editorButton);
         

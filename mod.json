@@ -32,6 +32,12 @@
 			"name": "Render Background Color",
 			"description": "Defines the BG color to use for the renders. Defaults to transparent (which is best, honestly)",
 			"default": [0, 0, 0, 0]
+		},
+		"extra-swing-space": {
+			"type": "bool",
+			"name": "Render - Extra Swing Space",
+			"description": "Adds extra space to Swing Renders to make sure the Swing Fires fit inside the render, and aren't cut off.",
+			"default": false
 		}
 	},
 	"id": "saritahhh.offset_assist",
