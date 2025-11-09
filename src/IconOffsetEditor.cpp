@@ -17,7 +17,7 @@
 // not to make ur entire fucking job
 // :thumbsup:
 
-std::string infoStr = R"(# Icon Workbench
+std::string infoStr = R"(# Icon Workbench (ENG)
 Welcome to the ***Icon Workbench Menu***!!
 In here, you will find all the mod's tools to assist you with your Icon Creating process! You've probably already read the mod's info page, so i'll just give you some extra guidance on what everything here does!
 
@@ -41,9 +41,35 @@ At the top right corner of the main Popup there's a small menu (which you alread
 - The second one opens your chosen Renders Folder.
 - The third one is the **Render Icon Button**!
 
-The **Render Icon** button will immediately render your Live Preview right as it is in its current state to a PNG image! It'll be saved to your chosen Renders folder, which you can customize via the mod's settings menu. By default, they'll be saved to a "Renders" folder inside the mod's config folder.)";
+The **Render Icon** button will immediately render your Live Preview right as it is in its current state to a PNG image! It'll be saved to your chosen Renders folder, which you can customize via the mod's settings menu. By default, they'll be saved to a "Renders" folder inside the mod's config folder.
 
-std::string whyStr = R"(## Why aren't vanilla icons supported?
+# Icon Workbench (ESP)
+¡Bienvenido al ***menú de Icon Workbench***!
+Aquí encontrarás todas las herramientas del mod que te ayudarán en el proceso de creación de iconos. Probablemente ya hayas leído la página de información del mod, así que solo te daré algunas indicaciones adicionales sobre lo que hace cada cosa aquí.
+
+En la ventana emergente principal encontrarás varias cosas, como los **campos de entrada de desplazamiento**, donde puedes editar los desplazamientos de los sprites de los iconos a tu gusto. 
+A la derecha de los campos de entrada de texto verás el icono que estás editando actualmente. Se trata de la **vista previa en vivo**, donde se aplicarán en tiempo real los cambios de desplazamiento.
+Esta **vista previa en vivo** también te permitirá previsualizar las animaciones del robot/araña, el movimiento de la bola y la posición del cubo.
+
+Justo debajo de la ventana emergente principal encontrarás dos botones, etiquetados como «Actualizar» y «Aplicar»:
+
+- El botón «Actualizar» aplicará cualquier cambio que hayas realizado en los desplazamientos de fotogramas en los campos de entrada de la ventana emergente. (O, en la configuración del mod, puedes encontrar una opción para habilitar la aplicación automática de los cambios cada vez que se modifiquen los campos de entrada. Esta opción está desactivada de forma predeterminada por motivos de estabilidad).
+- El botón «Aplicar» editará automáticamente el archivo plist de tu icono para aplicar los desplazamientos modificados.
+
+En la parte derecha de la ventana emergente del mod verás un pequeño *"menú lateral"*, Aquí es donde puedes elegir qué sprite de tu icono editar! Cuando hagas clic en uno, se seleccionará y mostrará una pequeña animación parpadeante para indicar que es el sprite seleccionado actualmente y, por supuesto, una vez seleccionado un icono, las entradas de texto editarán los desplazamientos de ese sprite.
+
+Debajo de la vista previa en vivo encontrarás dos botones que actúan esencialmente como interruptores para el **brillo de la vista previa en vivo** y la **vista previa del cuadro de impacto**.
+
+En la parte izquierda del menú, fuera de la ventana emergente principal, encontrarás tres botones que te permitirán cambiar los **colores de la vista previa en vivo** directamente desde la ventana emergente del mod.
+
+En la esquina superior derecha de la ventana emergente principal hay un pequeño menú (que ya has visto porque has hecho clic en este botón) donde encontrarás tres botones:
+- El primero muestra esta ventana emergente de información (holi :3).
+- El segundo abre la carpeta de renders que hayas elegido.
+- ¡El tercero es el botón de **Renderizar Icono**! (La camarita)
+
+El botón **Renderizar Icono** renderizará inmediatamente tu vista previa en vivo tal y como está en su estado actual a una imagen PNG. Se guardará en la carpeta de renderizados que hayas elegido, que puedes personalizar a través del menú de configuración del mod. Por defecto, se guardarán en una carpeta «Renders» dentro de la carpeta de configuración del mod.)";
+
+std::string whyStr = R"(## Why aren't vanilla icons supported? (ENG)
 
 The **MoreIcons** mod provides simple and quick ways to know various things this mod heavily utilizes:
 
@@ -56,7 +82,22 @@ Fetching these things without MoreIcons for Vanilla Icons would get very annoyin
 
 The mod's main target audience is Icon **Creators** anyway, so, most creators are probably using MoreIcons to load their icons without touching their vanilla icon list (Or should be, at least. Trust me, it's a whoooole 'nother world.)
 
-In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!)";
+In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!
+
+## ¿Por qué no se admiten los íconos vanilla? (ESP)
+
+El mod **MoreIcons** proporciona formas sencillas y rápidas de conocer diversos aspectos de los iconos que este mod utiliza en gran medida:
+
+- Dónde se encuentra el archivo .plist de un icono
+- Una lista completa de los nombres de cada frame/parte de un icono
+- El nombre del icono
+- Cuando sea necesario, el ID/nombre del Texture Pack
+
+Obtener esta información sin MoreIcons para los iconos predeterminados resultaría muy molesto MUY rápidamente. Por lo tanto, el mod depende de MoreIcons para funcionar correctamente.
+
+De todos modos, el público principal al que se dirige el mod son los **creadores** de iconos, por lo que es probable que la mayoría de ellos utilicen MoreIcons para cargar sus iconos sin tocar su lista de iconos predeterminados (o al menos deberian de hacerlo. Créeme, es otro cantar).
+
+En cualquier caso, si estás creando un paquete de iconos Vanilla, te recomiendo que actives la configuración «Cargar desde paquetes de iconos tradicionales» de MoreIcons, al menos temporalmente. Esto cargará los iconos de los paquetes de iconos Vanilla como si fueran iconos añadidos por MoreIcons y, por lo tanto, DEBERÍAS poder editarlos a través de Icon Construct. Según mis pruebas, esto FUNCIONA, ¡así que también debería funcionar para ti!)";
 
 std::string getCurrentTimeString() {
     auto now = std::chrono::system_clock::now();
