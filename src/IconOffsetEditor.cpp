@@ -58,15 +58,9 @@ The mod's main target audience is Icon **Creators** anyway, so, most creators ar
 
 In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!)";
 
-// this SHOULD'VE been a function to get the current time as a string
-// but now it's just this
-// thank u so much apple for being SOOO FUN to work with ... <3 fck u
-int getRandomInt(int min, int max) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(min, max);
-
-    return distr(gen);
+std::string getCurrentTimeString() {
+    auto now = std::chrono::system_clock::now();
+    return fmt::format("{:%Y%m%d_%H%M%S}", now);
 }
 
 void updatePreviewIcon(SimplePlayer* player, IconType iconType) {
@@ -1165,7 +1159,7 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
     if (!button) return;
     
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        auto frameNameObj = dynamic_cast<CCString*>(button->getUserObject());
+        auto frameNameObj = typeinfo_cast<CCString*>(button->getUserObject());
         if (frameNameObj) {
             m_currentFrameName = frameNameObj->getCString();
         }
@@ -1245,7 +1239,7 @@ void IconOffsetEditorPopup::onToggleHitbox(CCObject* sender) {
 
 void IconOffsetEditorPopup::onPlayAnimation(CCObject* sender) {
     auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
-    auto animName = dynamic_cast<CCString*>(btn->getUserObject());
+    auto animName = typeinfo_cast<CCString*>(btn->getUserObject());
     if (!animName) return;
     
     if (m_currentIconType == IconType::Robot && m_previewPlayer->m_robotSprite) {
@@ -1327,11 +1321,11 @@ void IconOffsetEditorPopup::onColorPicker(CCObject* sender) {
     auto userObj = menuItem->getUserObject();
     if (!userObj) return;
     
-    auto colorIdStr = dynamic_cast<CCString*>(userObj);
+    auto colorIdStr = typeinfo_cast<CCString*>(userObj);
     if (!colorIdStr) return;
     
     m_currentColorSettingId = std::string(colorIdStr->getCString());
-    m_currentColorButtonSprite = dynamic_cast<CCSprite*>(menuItem->getNormalImage());
+    m_currentColorButtonSprite = typeinfo_cast<CCSprite*>(menuItem->getNormalImage());
     
     ccColor3B currentColor;
     if (m_currentColorSettingId == "color1") {
@@ -1929,7 +1923,7 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
     
     if (!std::filesystem::exists(renderPath)) std::filesystem::create_directories(renderPath);
     
-    std::string renderFilename = fmt::format("{}-{}_{}.png", icInfo->shortName, getRandomInt(1, 9999), getRandomInt(1, 9999));
+    std::string renderFilename = fmt::format("{}-{}.png", icInfo->shortName, getCurrentTimeString());
     
     auto finalPath = renderPath / renderFilename;
     
@@ -1983,7 +1977,7 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
     
     std::string indent(depth * 2, ' ');
     
-    if (auto sprite = dynamic_cast<CCSprite*>(node)) {
+    if (auto sprite = typeinfo_cast<CCSprite*>(node)) {
         auto frame = sprite->displayFrame();
         if (frame) {
             auto texture = frame->getTexture();
@@ -2021,7 +2015,7 @@ void IconOffsetEditorPopup::mapRobotSpiderSprites(CCNode* node) {
         }
     }
     
-    if (auto spritePart = dynamic_cast<CCSpritePart*>(node)) {
+    if (auto spritePart = typeinfo_cast<CCSpritePart*>(node)) {
         auto frame = spritePart->displayFrame();
         if (frame) {
             auto texture = frame->getTexture();
