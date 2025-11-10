@@ -9,9 +9,6 @@
 	"resources": {
 		"sprites": [
 			"resources/*.png"
-		],
-		"files": [
-			"resources/*.md"
 		]
 	},
 	"settings": {

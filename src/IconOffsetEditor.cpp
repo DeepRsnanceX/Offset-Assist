@@ -84,7 +84,7 @@ The mod's main target audience is Icon **Creators** anyway, so, most creators ar
 
 In any case, if you're making a Vanilla Icon Pack, i'd recommend enabling MoreIcons' "Load from Traditional Icon Packs" setting, at least temporarily. This will load icons from Vanilla icon packs as if they were MoreIcons added Icons, and therefore, you SHOULD be able to edit them via Icon Construct. From my testing this DOES work, so it should for you too!
 
-## ¿Por que no se admiten los iconos vanilla? (ESP)
+## ¿Por que no se admiten los iconos vanilla? (ESP) [Traducido con DeepL]
 
 El mod **MoreIcons** proporciona formas sencillas y rapidas de conocer diversos aspectos de los iconos que este mod utiliza en gran medida:
 
@@ -95,7 +95,7 @@ El mod **MoreIcons** proporciona formas sencillas y rapidas de conocer diversos 
 
 Obtener esta informacion sin MoreIcons para los iconos predeterminados resultaria muy molesto MUY rapidamente. Por lo tanto, el mod depende de MoreIcons para funcionar correctamente.
 
-De todos modos, el publico principal al que se dirige el mod son los **creadores** de iconos, por lo que es probable que la mayoria de ellos utilicen MoreIcons para cargar sus iconos sin tocar su lista de iconos predeterminados (o al menos deberian de hacerlo. Creeme, es otro cantar).
+De todos modos, el publico principal al que se dirige el mod son los **creadores** de iconos, por lo que es probable que la mayoria de ellos utilicen MoreIcons para cargar sus iconos sin tocar su lista de iconos predeterminados (o al menos **deberian** de hacerlo. Creeme, es otro cantar).
 
 En cualquier caso, si estas creando un paquete de iconos Vanilla, te recomiendo que actives la configuracion "Cargar desde paquetes de iconos tradicionales" de MoreIcons, al menos temporalmente. Esto cargara los iconos de los paquetes de iconos Vanilla como si fueran iconos anadidos por MoreIcons y, por lo tanto, DEBERiAS poder editarlos a traves de Icon Construct. Segun mis pruebas, esto FUNCIONA, ¡asi que tambien deberia funcionar para ti!)";
 
