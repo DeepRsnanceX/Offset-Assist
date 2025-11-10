@@ -49,20 +49,20 @@ Aqui encontraras todas las herramientas del mod que te ayudaran en el proceso de
 
 En la ventana principal encontraras varias cosas, como los **Campos de entrada de los Offsets**, donde puedes editar los offsets de los sprites de los iconos a tu gusto. 
 A la derecha de los campos de entrada de texto veras el icono que estas editando actualmente. Se trata de la **vista previa en vivo**, donde se aplicaran en tiempo real los cambios de desplazamiento.
-Esta **vista previa en vivo** tambien te permitira previsualizar las animaciones del robot/araña, el movimiento de la bola y la posicion del cubo.
+Esta **vista previa en vivo** tambien te permitira previsualizar las animaciones del robot/arana, el movimiento de la bola y la posicion del cubo.
 
 Justo debajo de la ventana principal encontraras dos botones, etiquetados como "Actualizar" y "Aplicar":
 
 - El boton "Actualizar" aplicara cualquier cambio que hayas realizado en los offsets de cada frame en los campos de entrada de la ventana. (O, en la configuracion del mod, puedes encontrar una opcion para habilitar la aplicacion automatica de los cambios cada vez que se modifiquen los campos de entrada. Esta opcion esta desactivada de forma predeterminada por motivos de estabilidad).
 - El boton "Aplicar" editara automaticamente el archivo plist de tu icono para aplicar los desplazamientos modificados.
 
-En la parte derecha de la ventana del mod veras un pequeño *"menu lateral"*, Aqui es donde puedes elegir que sprite de tu icono editar! Cuando hagas clic en uno, se seleccionara y mostrara una pequeña animacion parpadeante para indicar que es el sprite seleccionado actualmente y, por supuesto, una vez seleccionado un icono, las entradas de texto editaran los offsets de ese sprite.
+En la parte derecha de la ventana del mod veras un pequeno *"menu lateral"*, Aqui es donde puedes elegir que sprite de tu icono editar! Cuando hagas clic en uno, se seleccionara y mostrara una pequena animacion parpadeante para indicar que es el sprite seleccionado actualmente y, por supuesto, una vez seleccionado un icono, las entradas de texto editaran los offsets de ese sprite.
 
 Debajo de la vista previa en vivo encontraras dos botones que actuan esencialmente como interruptores para activar/desactivar la **preview del glow** y la **preview de la hitbox**.
 
 En la parte izquierda del menu, fuera de la ventana principal, encontraras tres botones que te permitiran cambiar los **colores de la vista previa en vivo** directamente desde la ventana emergente del mod.
 
-En la esquina superior derecha de la ventana principal hay un pequeño menu (que ya has visto porque has hecho clic en este boton) donde encontraras tres botones:
+En la esquina superior derecha de la ventana principal hay un pequeno menu (que ya has visto porque has hecho clic en este boton) donde encontraras tres botones:
 - El primero muestra esta ventana de informacion (holi :3).
 - El segundo abre la carpeta de renders que hayas elegido.
 - ¡El tercero es el boton de **Renderizar Icono**! (La camarita)
@@ -97,7 +97,7 @@ Obtener esta informacion sin MoreIcons para los iconos predeterminados resultari
 
 De todos modos, el publico principal al que se dirige el mod son los **creadores** de iconos, por lo que es probable que la mayoria de ellos utilicen MoreIcons para cargar sus iconos sin tocar su lista de iconos predeterminados (o al menos deberian de hacerlo. Creeme, es otro cantar).
 
-En cualquier caso, si estas creando un paquete de iconos Vanilla, te recomiendo que actives la configuracion "Cargar desde paquetes de iconos tradicionales" de MoreIcons, al menos temporalmente. Esto cargara los iconos de los paquetes de iconos Vanilla como si fueran iconos añadidos por MoreIcons y, por lo tanto, DEBERiAS poder editarlos a traves de Icon Construct. Segun mis pruebas, esto FUNCIONA, ¡asi que tambien deberia funcionar para ti!)";
+En cualquier caso, si estas creando un paquete de iconos Vanilla, te recomiendo que actives la configuracion "Cargar desde paquetes de iconos tradicionales" de MoreIcons, al menos temporalmente. Esto cargara los iconos de los paquetes de iconos Vanilla como si fueran iconos anadidos por MoreIcons y, por lo tanto, DEBERiAS poder editarlos a traves de Icon Construct. Segun mis pruebas, esto FUNCIONA, ¡asi que tambien deberia funcionar para ti!)";
 
 std::string getCurrentTimeString() {
     auto now = std::chrono::system_clock::now();
