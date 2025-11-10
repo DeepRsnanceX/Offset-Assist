@@ -1359,7 +1359,7 @@ void IconOffsetEditorPopup::onColorPicker(CCObject* sender) {
     auto menuItem = static_cast<CCMenuItemSpriteExtra*>(sender);
     if (!menuItem) return;
     
-    auto colorIdStr = typeinfo_cast<CCString*>(menuItem->getUserObject("color-id"));
+    auto colorIdStr = typeinfo_cast<CCString*>(menuItem->getUserObject("color-id"_spr));
     if (!colorIdStr) return;
     
     m_currentColorSettingId = std::string(colorIdStr->getCString());
