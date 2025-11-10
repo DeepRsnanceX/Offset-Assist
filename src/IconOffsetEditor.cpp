@@ -701,8 +701,8 @@ bool IconOffsetEditorPopup::setup() {
                     this,
                     menu_selector(IconOffsetEditorPopup::onPlayAnimation)
                 );
-                btn->setUserObject(CCString::create(animName));
-                btn->setID(fmt::format("play-{}-anim", animName));
+                btn->setUserObject("anim-name"_spr, CCString::create(animName));
+                btn->setID(fmt::format("play-{}-anim"_spr, animName));
                 return btn;
             };
             
@@ -720,7 +720,7 @@ bool IconOffsetEditorPopup::setup() {
                     this,
                     menu_selector(IconOffsetEditorPopup::onPlayAnimation)
                 );
-                btn->setUserObject(CCString::create(animName));
+                btn->setUserObject("anim-name"_spr, CCString::create(animName));
                 return btn;
             };
             
@@ -1001,7 +1001,7 @@ bool IconOffsetEditorPopup::setup() {
                 menu_selector(IconOffsetEditorPopup::onPartSelected)
             );
             button->setTag(i);
-            button->setUserObject(CCString::create(frameName));
+            button->setUserObject("frame-name"_spr, CCString::create(frameName));
             button->setID(fmt::format("{}-btn", frameName));
 
             auto btnSize = button->getContentSize();
@@ -1032,7 +1032,7 @@ bool IconOffsetEditorPopup::setup() {
                 menu_selector(IconOffsetEditorPopup::onPartSelected)
             );
             button->setTag(static_cast<int>(part));
-            button->setUserObject(CCString::create(tooltip));
+            button->setUserObject("part-sprite"_spr, CCString::create(tooltip));
             button->setID(fmt::format("{}-btn", tooltip));
 
             auto btnSize = button->getContentSize();
@@ -1200,7 +1200,7 @@ void IconOffsetEditorPopup::onPartSelected(CCObject* sender) {
     if (!button) return;
     
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
-        auto frameNameObj = typeinfo_cast<CCString*>(button->getUserObject());
+        auto frameNameObj = typeinfo_cast<CCString*>(button->getUserObject("frame-name"_spr));
         if (frameNameObj) {
             m_currentFrameName = frameNameObj->getCString();
         }
@@ -1280,7 +1280,7 @@ void IconOffsetEditorPopup::onToggleHitbox(CCObject* sender) {
 
 void IconOffsetEditorPopup::onPlayAnimation(CCObject* sender) {
     auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
-    auto animName = typeinfo_cast<CCString*>(btn->getUserObject());
+    auto animName = typeinfo_cast<CCString*>(btn->getUserObject("anim-name"_spr));
     if (!animName) return;
     
     if (m_currentIconType == IconType::Robot && m_previewPlayer->m_robotSprite) {
@@ -1349,7 +1349,7 @@ CCMenuItemSpriteExtra* IconOffsetEditorPopup::createColorPickerButton(const std:
         menu_selector(IconOffsetEditorPopup::onColorPicker)
     );
     
-    button->setUserObject(CCString::create(colorId));
+    button->setUserObject("color-id"_spr, CCString::create(colorId));
     button->setID(fmt::format("{}-btn"_spr, colorId));
     
     return button;
@@ -1359,10 +1359,7 @@ void IconOffsetEditorPopup::onColorPicker(CCObject* sender) {
     auto menuItem = static_cast<CCMenuItemSpriteExtra*>(sender);
     if (!menuItem) return;
     
-    auto userObj = menuItem->getUserObject();
-    if (!userObj) return;
-    
-    auto colorIdStr = typeinfo_cast<CCString*>(userObj);
+    auto colorIdStr = typeinfo_cast<CCString*>(menuItem->getUserObject("color-id"));
     if (!colorIdStr) return;
     
     m_currentColorSettingId = std::string(colorIdStr->getCString());
@@ -1722,6 +1719,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
         updatedCount++;
     }
 
+    // no voy a traducir esto a la chingada
     if (!remapNames && notFoundCount > 0 && notFoundCount == m_modifiedOffsets.size()) {
         std::stringstream retryMsg;
         retryMsg << "# <cr>Frames Not Found.</c>\n\n";
