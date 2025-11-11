@@ -254,15 +254,14 @@ protected:
             return;
         }
 
-        try {
-            float value = std::stof(valueStr);
-
-            if (m_callback) m_callback(value);
-            this->onClose(nullptr);
-
-        } catch (const std::exception& e) {
+        auto value = geode::utils::numFromString<float>(valueStr);
+        if (!value) {
             FLAlertLayer::create("Error", "Invalid number!", "OK")->show();
+            return;
         }
+
+        if (m_callback) m_callback(value.unwrap());
+        this->onClose(nullptr);
     }
     
 public:
@@ -1476,15 +1475,25 @@ void IconOffsetEditorPopup::onUpdateOffsets(CCObject* sender) {
     float offsetX = 0.0f;
     float offsetY = 0.0f;
     
-    try {
-        std::string xStr = m_inputX->getString();
-        std::string yStr = m_inputY->getString();
-        
-        if (!xStr.empty()) offsetX = std::stof(xStr);
-        if (!yStr.empty()) offsetY = std::stof(yStr);
-    } catch (const std::exception& e) {
-        log::error("Failed to parse offset values: {}", e.what());
-        return;
+    std::string xStr = m_inputX->getString();
+    std::string yStr = m_inputY->getString();
+
+    if (!xStr.empty()) {
+        auto xResult = geode::utils::numFromString<float>(xStr);
+        if (!xResult) {
+            log::error("couldn't parse X offset value: {}", xStr);
+            return;
+        }
+        offsetX = xResult.unwrap();
+    }
+
+    if (!yStr.empty()) {
+        auto yResult = geode::utils::numFromString<float>(yStr);
+        if (!yResult) {
+            log::error("couldn't parse Y offset value: {}", yStr);
+            return;
+        }
+        offsetY = yResult.unwrap();
     }
     
     CCPoint newOffset = {offsetX, offsetY};
@@ -2128,13 +2137,12 @@ void IconOffsetEditorPopup::applyOffsetToAllMatchingSprites(CCNode* node, const 
 void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
     AddValuePopup::create([this](float value) {
         float currentX = 0.0f;
-        try {
-            std::string xStr = m_inputX->getString();
-            if (!xStr.empty()) {
-                currentX = std::stof(xStr);
+        std::string xStr = m_inputX->getString();
+        if (!xStr.empty()) {
+            auto xResult = geode::utils::numFromString<float>(xStr);
+            if (xResult) {
+                currentX = xResult.unwrap();
             }
-        } catch (const std::exception& e) {
-            currentX = 0.0f;
         }
         
         float newX = currentX + value;
@@ -2150,13 +2158,12 @@ void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
 void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
     AddValuePopup::create([this](float value) {
         float currentY = 0.0f;
-        try {
-            std::string yStr = m_inputY->getString();
-            if (!yStr.empty()) {
-                currentY = std::stof(yStr);
+        std::string yStr = m_inputY->getString();
+        if (!yStr.empty()) {
+            auto yResult = geode::utils::numFromString<float>(yStr);
+            if (yResult) {
+                currentY = yResult.unwrap();
             }
-        } catch (const std::exception& e) {
-            currentY = 0.0f;
         }
         
         float newY = currentY + value;
