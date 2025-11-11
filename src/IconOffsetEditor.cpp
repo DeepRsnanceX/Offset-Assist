@@ -1966,7 +1966,7 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
     
     auto finalPath = renderPath / renderFilename;
     
-    log::info("rendering icon to: {}", finalPath.string());
+    log::info("rendering icon to: {}", utils::string::pathToString(finalPath));
     
     CCImage* render = getIconImage();
     
@@ -1980,20 +1980,21 @@ void IconOffsetEditorPopup::onRenderIcon(CCObject* sender) {
         return;
     }
     
-    bool saved = render->saveToFile(finalPath.string().c_str(), false);
+    
+    bool saved = render->saveToFile(utils::string::pathToString(finalPath).c_str(), false);
     delete render;
     
     if (saved) {
         FLAlertLayer::create(
             "Rendered!",
-            fmt::format("Icon rendered successfully!\nSaved to: <cy>{}</c>", finalPath.string()),
+            fmt::format("Icon rendered successfully!\nSaved to: <cy>{}</c>", utils::string::pathToString(finalPath)),
             ":D"
         )->show();
-        log::info("Successfully rendered icon {} to {}", icInfo->shortName, finalPath.string());
+        log::info("Successfully rendered icon {} to {}", icInfo->shortName, utils::string::pathToString(finalPath));
     } else {
         FLAlertLayer::create(
             "Error",
-            fmt::format("Failed to save render to:\n{}", finalPath.string()),
+            fmt::format("Failed to save render to:\n{}", utils::string::pathToString(finalPath)),
             ":("
         )->show();
         log::error("Failed to save image to file");
