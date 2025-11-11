@@ -1,3 +1,6 @@
+# v1.1.2
+- More internal code fixes and improvements.
+
 # v1.1.1
 - Internal code fixes and improvements. (Major noticeable change for end users is Icon Renders now use the current date to generate the filename instead of random numbers, to make it even less possible for filenames to be duplicate.)
 - Translated major Info Popups to Spanish (Los textos de informacion mas importantes estan en espanol ahora - al final de los textos en ingles esta la info en espanol).
