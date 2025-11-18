@@ -2148,7 +2148,7 @@ void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
         
         float newX = currentX + value;
         
-        m_inputX->setString(fmt::format("{:.1f}", newX));
+        m_inputX->setString(fmt::format("{:.4f}", newX));
         
         onUpdateOffsets(nullptr);
         
@@ -2169,7 +2169,7 @@ void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
         
         float newY = currentY + value;
         
-        m_inputY->setString(fmt::format("{:.1f}", newY));
+        m_inputY->setString(fmt::format("{:.4f}", newY));
         
         onUpdateOffsets(nullptr);
         

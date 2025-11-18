@@ -1,3 +1,6 @@
+# v1.1.3
+- Fixed offsets being rounded and not respecting decimal places in various scenarios.
+
 # v1.1.2
 - More internal code fixes and improvements.
 
