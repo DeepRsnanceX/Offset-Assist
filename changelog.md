@@ -1,5 +1,11 @@
-# v1.1.3
+# v1.2.0
+- Added a setting to disable the Hitbox Preview's fill.
+- Added a Slider to control the Hitbox Preview Border's Opacity.
+- Added a setting to disable the Swing Fires being animated.
 - Fixed offsets being rounded and not respecting decimal places in various scenarios.
+- Fixed Frame Name Remapping not working properly for Robot/Spider icons.
+- Slightly "fixed" Popup positioning so it's not too far to the left.
+- Increased background darkening in the popup so elements outside it are a bit more visible.
 
 # v1.1.2
 - More internal code fixes and improvements.

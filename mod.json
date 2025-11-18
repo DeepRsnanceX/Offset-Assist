@@ -35,11 +35,23 @@
 			"name": "Render - Extra Swing Space",
 			"description": "Adds extra space to Swing Renders to make sure the Swing Fires fit inside the render, and aren't cut off.",
 			"default": false
+		},
+		"animate-swing-fires": {
+			"type": "bool",
+			"name": "Animate Swing Fires",
+			"description": "Plays the in-game looping Fire Animation on the preview's Swing Fires",
+			"default": true
+		},
+		"draw-hitbox-fill": {
+			"type": "bool",
+			"name": "Draw Hitbox Fill",
+			"description": "Enables drawing the hitbox fill in the Workbench Hitbox preview. \n\nIn case you're wondering why you can toggle this and not the border, it's because the border is mainly controlled via the slider in the popup.",
+			"default": true
 		}
 	},
 	"id": "saritahhh.offset_assist",
 	"name": "Icon Construct",
-	"version": "v1.1.3",
+	"version": "v1.2.0",
 	"developer": "Saritahhh",
 	"description": "All-in-one Utils for Icon Creators!",
 	"links": {

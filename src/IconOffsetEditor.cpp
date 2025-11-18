@@ -333,12 +333,17 @@ bool IconOffsetEditorPopup::setup() {
         return true;
     }
 
+    // -----------------------
+    // MISC SETUPS
+    // -----------------------
 
 	m_iconNameLabel = CCLabelBMFont::create(fmt::format("Editing: {}", icInfo->shortName).c_str(), "chatFont.fnt");
 	m_iconNameLabel->setPosition({midX, size.height - 35.f});
 	m_iconNameLabel->setScale(0.5f);
     m_iconNameLabel->setOpacity(135);
 	this->m_mainLayer->addChild(m_iconNameLabel);
+
+    this->setOpacity(165);
 
     // -----------------------
     // TOP RIGHT BUTTON MENU
@@ -435,7 +440,10 @@ bool IconOffsetEditorPopup::setup() {
     m_colorPickerMenu->setID("color-picker-menu"_spr);
     this->m_mainLayer->addChild(m_colorPickerMenu);
 
-    m_mainLayer->setPosition({m_mainLayer->getPositionX() - 60.f, m_mainLayer->getPositionY()});
+    // THIS MOVES POPUP TO THE LEFT
+    // ADDING A COMMENT CUZ I LITERALLY LOST THIS LINE LMAO
+    float pleaseCenter = (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) ? 50.f : 30.f;
+    m_mainLayer->setPosition({m_mainLayer->getPositionX() - pleaseCenter, m_mainLayer->getPositionY()});
 
     auto colLabelsNode = CCNode::create();
     colLabelsNode->setContentSize(m_colorPickerMenu->getContentSize());
@@ -571,9 +579,11 @@ bool IconOffsetEditorPopup::setup() {
         m_swingMidFire->setID("swing-middle-fire-preview"_spr);
         m_swingBotFire->setID("swing-bottom-fire-preview"_spr);
 
-        m_swingTopFire->loopFireAnimation();
-        m_swingMidFire->loopFireAnimation();
-        m_swingBotFire->loopFireAnimation();
+        if (Mod::get()->getSettingValue<bool>("animate-swing-fires")) {
+            m_swingTopFire->loopFireAnimation();
+            m_swingMidFire->loopFireAnimation();
+            m_swingBotFire->loopFireAnimation();
+        }
 
         // control fire opacities
         auto opacityLabel = CCLabelBMFont::create("Swing Fires Opacity:", "goldFont.fnt");
@@ -642,6 +652,34 @@ bool IconOffsetEditorPopup::setup() {
     m_hitboxToggler->setID("toggle-hitbox"_spr);
 
     previewMenu->updateLayout();
+
+    // opacity slider
+    auto hitboxOpacityLabel = CCLabelBMFont::create("Hitbox Border Opacity:", "goldFont.fnt");
+    hitboxOpacityLabel->setPosition({midX, size.height + 32.f});
+    hitboxOpacityLabel->setScale(0.35f);
+    hitboxOpacityLabel->setID("hitbox-opacity-label-text"_spr);
+    this->m_mainLayer->addChild(hitboxOpacityLabel);
+
+    m_hitboxOpacitySlider = Slider::create(
+        this,
+        menu_selector(IconOffsetEditorPopup::onHitboxOpacityChanged),
+        0.6f
+    );
+    m_hitboxOpacitySlider->setValue(1.0f);
+    m_hitboxOpacitySlider->m_sliderBar->setContentSize({60.f, m_hitboxOpacitySlider->m_sliderBar->getContentSize().height});
+
+    auto hitboxOpacityMenu = CCMenu::create();
+    hitboxOpacityMenu->addChild(m_hitboxOpacitySlider);
+    hitboxOpacityMenu->setPosition({midX, size.height + 20.f});
+    hitboxOpacityMenu->setID("hitbox-opacity-menu"_spr);
+    this->m_mainLayer->addChild(hitboxOpacityMenu);
+
+    m_hitboxOpacityLabel = CCLabelBMFont::create("100%", "bigFont.fnt");
+    m_hitboxOpacityLabel->setPosition({midX, size.height + 10.f});
+    m_hitboxOpacityLabel->setScale(0.25f);
+    m_hitboxOpacityLabel->setOpacity(150);
+    m_hitboxOpacityLabel->setID("hitbox-opacity-value-label"_spr);
+    this->m_mainLayer->addChild(m_hitboxOpacityLabel);
 
     if (isRobotOrSpider) {
         auto robotSprite = (m_currentIconType == IconType::Robot) ? 
@@ -1244,9 +1282,9 @@ void IconOffsetEditorPopup::drawHitbox() {
     m_hitboxDrawNode->clear();
     
     auto hitboxSize = getHitboxSizeForIconType(m_currentIconType);
-    
-    //auto playerPos = m_previewPlayer->getPosition();
     auto playerPos = m_iconContainerNode->getPosition();
+
+    bool drawFill = Mod::get()->getSettingValue<bool>("draw-hitbox-fill");
     
     CCRect hitboxRect = {
         playerPos.x - hitboxSize.width / 2.f,
@@ -1255,9 +1293,15 @@ void IconOffsetEditorPopup::drawHitbox() {
         hitboxSize.height
     };
     
-    ccColor4F borderColor = {1.0f, 0.0f, 0.0f, 1.0f};
-    ccColor4F fillColor = {1.0f, 0.0f, 0.0f, 0.15f}; 
+    ccColor4F borderColor = {1.f, 0.f, 0.f, m_hitboxOpacity};
+    ccColor4F fillColor;
     float borderSize = 0.5f;
+
+    if (drawFill) {
+        fillColor = {1.f, 0.f, 0.f, 0.15f * m_hitboxOpacity};
+    } else {
+        fillColor = {0.f, 0.f, 0.f, 0.f};
+    }
     
     std::array<CCPoint, 4> vertices = {
         CCPoint{hitboxRect.getMinX(), hitboxRect.getMinY()},
@@ -1604,11 +1648,14 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
     std::string internalFrameName = "";
 
     if (remapNames && !iconShortName.empty()) {
-        addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 1);
+        addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 2);
         
         // @geode-ignore(unknown-resource)
         std::string searchPattern = "_001.png";
+        if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) searchPattern = "_01_001.png";
         size_t searchPos = plistContent.find(searchPattern);
+
+        addToLog(fmt::format("<cy>[REMAPPING]</c> Looking for: {} to find internal frame name...", searchPattern), 2);
         
         if (searchPos != std::string::npos) {
             size_t keyStart = plistContent.rfind("<key>", searchPos);
@@ -1619,16 +1666,16 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
                     
                     if (fullFrameName.length() > searchPattern.length()) {
                         internalFrameName = fullFrameName.substr(0, fullFrameName.length() - searchPattern.length());
-                        addToLog(fmt::format("<cg>[REMAPPING]</c> Found internal frame name: `{}`", internalFrameName), 1);
-                        addToLog(fmt::format("<cy>[REMAPPING]</c> Replacing `{}` with `{}` to find frame names in plist.", iconShortName, internalFrameName), 1);
+                        addToLog(fmt::format("<cg>[REMAPPING]</c> Found internal frame name: `{}`", internalFrameName), 2);
+                        addToLog(fmt::format("<cy>[REMAPPING]</c> Replacing `{}` with `{}` to find frame names in plist.", iconShortName, internalFrameName), 2);
                     }
                 }
             }
         }
         
         if (internalFrameName.empty()) {
-            addToLog("<cr>[ERROR]</c> Could not detect internal frame name from plist!", 0);
-            addToLog("The plist may not contain any frames with the standard naming pattern.", 0);
+            addToLog("<cr>[ERROR]</c> Could not detect internal frame name from plist!", 2);
+            addToLog("The plist may not contain any frames with the standard naming pattern.", 1);
             
             std::string errorMsg = "## <cr>Internal Frame Name Not Found!</c>\n\n";
             errorMsg += "Could not detect the internal frame name from the plist file.\n\n";
@@ -1660,7 +1707,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
                 
                 searchFrameName = internalFrameName + suffix;
                 
-                addToLog(fmt::format("<cy>[REMAPPED]</c> `{}` <cl>-></c> `{}`", frameName, searchFrameName), 0);
+                addToLog(fmt::format("<cy>[REMAPPED]</c> `{}` <cl>-></c> `{}`", frameName, searchFrameName), 1);
             }
         }
         
@@ -2175,6 +2222,13 @@ void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
         
         log::info("Added {} to Y offset (was {}, now {})", value, currentY, newY);
     }, false)->show();
+}
+
+void IconOffsetEditorPopup::onHitboxOpacityChanged(CCObject* sender) {
+    m_hitboxOpacity = m_hitboxOpacitySlider->getValue();
+    
+    if (m_hitboxOpacityLabel) m_hitboxOpacityLabel->setString(fmt::format("{}%", static_cast<int>(m_hitboxOpacity * 100)).c_str());
+    if (m_showHitbox) drawHitbox();
 }
 
 class $modify(OffsetEditorGarageLayer, GJGarageLayer) {

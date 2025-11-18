@@ -57,6 +57,9 @@ protected:
 
     CCDrawNode* m_hitboxDrawNode = nullptr;
     CCMenuItemSpriteExtra* m_hitboxToggler = nullptr;
+    Slider* m_hitboxOpacitySlider = nullptr;
+    CCLabelBMFont* m_hitboxOpacityLabel = nullptr;
+    float m_hitboxOpacity = 1.0f;
     bool m_showHitbox = false;
     
     SelectedSpritePart m_selectedPart = SelectedSpritePart::FirstLayer;
@@ -102,6 +105,7 @@ protected:
     void onAddToOffsetX(CCObject* sender);
     void onAddToOffsetY(CCObject* sender);
 
+    void onHitboxOpacityChanged(CCObject* sender);
     void onColorPicker(CCObject* sender);
     void updateColor(cocos2d::ccColor4B const& color) override;
     void applyPreviewColors();
