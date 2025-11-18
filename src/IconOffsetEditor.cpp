@@ -1169,17 +1169,17 @@ void IconOffsetEditorPopup::updateInputFields() {
     
     if (m_modifiedOffsets.count(realFrameName)) {
         auto offset = m_modifiedOffsets[realFrameName];
-        m_inputX->setString(fmt::format("{:.1f}", offset.x));
-        m_inputY->setString(fmt::format("{:.1f}", offset.y));
+        m_inputX->setString(fmt::format("{:.2f}", offset.x));
+        m_inputY->setString(fmt::format("{:.2f}", offset.y));
         return;
     }
-    
+
     if (m_currentIconType == IconType::Robot || m_currentIconType == IconType::Spider) {
         auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(m_currentFrameName.c_str());
         if (frame) {
             auto offset = frame->getOffsetInPixels();
-            m_inputX->setString(fmt::format("{:.1f}", offset.x));
-            m_inputY->setString(fmt::format("{:.1f}", offset.y));
+            m_inputX->setString(fmt::format("{:.2f}", offset.x));
+            m_inputY->setString(fmt::format("{:.2f}", offset.y));
         }
     } else {
         auto sprite = getCurrentSelectedSprite();
@@ -1187,8 +1187,8 @@ void IconOffsetEditorPopup::updateInputFields() {
             auto frame = sprite->displayFrame();
             if (frame) {
                 auto offset = frame->getOffsetInPixels();
-                m_inputX->setString(fmt::format("{:.1f}", offset.x));
-                m_inputY->setString(fmt::format("{:.1f}", offset.y));
+                m_inputX->setString(fmt::format("{:.2f}", offset.x));
+                m_inputY->setString(fmt::format("{:.2f}", offset.y));
             }
         }
     }
@@ -1606,7 +1606,8 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
     if (remapNames && !iconShortName.empty()) {
         addToLog("<cy>[REMAPPING]</c> Trying to find internal frame name in plist...", 1);
         
-        std::string searchPattern = "_001.png"; // oh my GOD GEODE IT'S NOT A SPRITE I'M TRYING TO USE
+        // @geode-ignore(unknown-resource)
+        std::string searchPattern = "_001.png";
         size_t searchPos = plistContent.find(searchPattern);
         
         if (searchPos != std::string::npos) {
@@ -1710,9 +1711,9 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
             continue;
         }
 
-        std::string newOffsetStr = fmt::format("{{{},{}}}",
-            static_cast<int>(std::round(offset.x)),
-            static_cast<int>(std::round(offset.y)));
+        std::string newOffsetStr = fmt::format("{{{:.6f},{:.6f}}}",
+            offset.x,
+            offset.y);
 
         plistContent.replace(
             stringStart + 8,
