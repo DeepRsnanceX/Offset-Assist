@@ -1169,8 +1169,8 @@ void IconOffsetEditorPopup::updateInputFields() {
     
     if (m_modifiedOffsets.count(realFrameName)) {
         auto offset = m_modifiedOffsets[realFrameName];
-        m_inputX->setString(fmt::format("{:.2f}", offset.x));
-        m_inputY->setString(fmt::format("{:.2f}", offset.y));
+        m_inputX->setString(fmt::format("{:.6g}", offset.x));
+        m_inputY->setString(fmt::format("{:.6g}", offset.y));
         return;
     }
 
@@ -1178,8 +1178,8 @@ void IconOffsetEditorPopup::updateInputFields() {
         auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(m_currentFrameName.c_str());
         if (frame) {
             auto offset = frame->getOffsetInPixels();
-            m_inputX->setString(fmt::format("{:.2f}", offset.x));
-            m_inputY->setString(fmt::format("{:.2f}", offset.y));
+            m_inputX->setString(fmt::format("{:.6g}", offset.x));
+            m_inputY->setString(fmt::format("{:.6g}", offset.y));
         }
     } else {
         auto sprite = getCurrentSelectedSprite();
@@ -1187,8 +1187,8 @@ void IconOffsetEditorPopup::updateInputFields() {
             auto frame = sprite->displayFrame();
             if (frame) {
                 auto offset = frame->getOffsetInPixels();
-                m_inputX->setString(fmt::format("{:.2f}", offset.x));
-                m_inputY->setString(fmt::format("{:.2f}", offset.y));
+                m_inputX->setString(fmt::format("{:.6g}", offset.x));
+                m_inputY->setString(fmt::format("{:.6g}", offset.y));
             }
         }
     }
@@ -1711,7 +1711,7 @@ void IconOffsetEditorPopup::processPlistSave(bool remapNames) {
             continue;
         }
 
-        std::string newOffsetStr = fmt::format("{{{:.6f},{:.6f}}}",
+        std::string newOffsetStr = fmt::format("{{{:.6g},{:.6g}}}",
             offset.x,
             offset.y);
 
@@ -2148,7 +2148,7 @@ void IconOffsetEditorPopup::onAddToOffsetX(CCObject* sender) {
         
         float newX = currentX + value;
         
-        m_inputX->setString(fmt::format("{:.4f}", newX));
+        m_inputX->setString(fmt::format("{:.6g}", newX));
         
         onUpdateOffsets(nullptr);
         
@@ -2169,7 +2169,7 @@ void IconOffsetEditorPopup::onAddToOffsetY(CCObject* sender) {
         
         float newY = currentY + value;
         
-        m_inputY->setString(fmt::format("{:.4f}", newY));
+        m_inputY->setString(fmt::format("{:.6g}", newY));
         
         onUpdateOffsets(nullptr);
         
